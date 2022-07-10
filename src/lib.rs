@@ -2,22 +2,19 @@ use cosmwasm_std::{
     entry_point, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdResult,
 };
 
+mod contract;
+mod msg;
+
 #[entry_point]
-pub fn instantiate(
-    _deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    _msg: Empty,
-) -> StdResult<Response> {
-    Ok(Response::new())
+pub fn instantiate(deps: DepsMut, env: Env, info: MessageInfo, msg: Empty)
+  -> StdResult<Response>
+{
+    contract::instantiate(deps, env, info, msg)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        assert_eq!(4, 4);
-    }
+#[entry_point]
+pub fn query(deps: Deps, env: Env, msg: msg::QueryMsg)
+  -> StdResult<Binary>
+{
+    contract::query(deps, env, msg)
 }
