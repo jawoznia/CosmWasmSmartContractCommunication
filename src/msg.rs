@@ -14,4 +14,11 @@ pub struct GreetResp {
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub enum QueryMsg {
     Greet {},
+    AdminsList {},
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+#[serde(rename_all = "snake_case")]
+pub struct AdminsListResp {
+    pub admins: Vec<Addr>,
 }
