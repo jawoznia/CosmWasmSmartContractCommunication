@@ -22,3 +22,9 @@ pub enum QueryMsg {
 pub struct AdminsListResp {
     pub admins: Vec<Addr>,
 }
+
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+pub enum ExecuteMsg {
+    AddMembers { admins: Vec<String> },
+    Leave {},
+}
