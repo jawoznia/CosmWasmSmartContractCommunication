@@ -1,10 +1,10 @@
 use crate::error::ContractError;
 use crate::msg::{AdminsListResp, ExecuteMsg, GreetResp, InstantiateMsg, QueryMsg};
 use crate::state::{ADMINS, DONATION_DENOM};
+use cosmwasm_std::StdError;
 use cosmwasm_std::{
     coins, to_binary, BankMsg, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult,
 };
-use cosmwasm_std::StdError;
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
