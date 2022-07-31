@@ -189,4 +189,41 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn unauthorized() {
+        let mut app = App::default();
+
+        let code = ContractWrapper::new(execute, instantiate, query);
+        let code_id = app.store_code(Box::new(code));
+
+        let addr = app
+            .instantiate_contract(
+                code_id,
+                Addr::unchecked("owner"),
+                &InstantiateMsg { admins: vec![] },
+                &[],
+                "Contract",
+                None,
+            )
+            .unwrap();
+
+        let err = app
+            .execute_contract(
+                Addr::unchecked("user"),
+                addr,
+                &ExecuteMsg::AddMembers {
+                    admins: vec!["user".to_owned()],
+                },
+                &[],
+            )
+            .unwrap_err();
+
+        assert_eq!(
+            ContractError::Unauthorized {
+                sender: Addr::unchecked("user")
+            },
+            err.downcast().unwrap()
+        );
+    }
 }
