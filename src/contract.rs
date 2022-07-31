@@ -411,4 +411,75 @@ mod tests {
             2
         );
     }
+
+    #[test]
+    fn prevent_double_donations_for_single_admin() {
+        let mut app = App::new(|router, _, storage| {
+            router
+                .bank
+                .init_balance(storage, &Addr::unchecked("user"), coins(5, "eth"))
+                .unwrap()
+        });
+
+        let code = ContractWrapper::new(execute, instantiate, query);
+        let code_id = app.store_code(Box::new(code));
+
+        let addr = app
+            .instantiate_contract(
+                code_id,
+                Addr::unchecked("owner"),
+                &InstantiateMsg {
+                    admins: vec!["admin1".to_owned(), "admin2".to_owned(), "admin1".to_owned()],
+                    donation_denom: "eth".to_owned(),
+                },
+                &[],
+                "Contract",
+                None,
+            )
+            .unwrap();
+
+        app.execute_contract(
+            Addr::unchecked("user"),
+            addr.clone(),
+            &ExecuteMsg::Donate {},
+            &coins(5, "eth"),
+        )
+        .unwrap();
+
+        assert_eq!(
+            app.wrap()
+                .query_balance("user", "eth")
+                .unwrap()
+                .amount
+                .u128(),
+            0
+        );
+
+        assert_eq!(
+            app.wrap()
+                .query_balance(&addr, "eth")
+                .unwrap()
+                .amount
+                .u128(),
+            1
+        );
+
+        assert_eq!(
+            app.wrap()
+                .query_balance("admin1", "eth")
+                .unwrap()
+                .amount
+                .u128(),
+            2
+        );
+
+        assert_eq!(
+            app.wrap()
+                .query_balance("admin2", "eth")
+                .unwrap()
+                .amount
+                .u128(),
+            2
+        );
+    }
 }
