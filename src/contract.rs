@@ -4,7 +4,7 @@ use crate::state::{ADMINS, DONATION_DENOM};
 use cosmwasm_std::{
     coins, to_binary, BankMsg, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult,
 };
-
+use cosmwasm_std::StdError;
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
@@ -96,7 +96,9 @@ mod exec {
         let denom = DONATION_DENOM.load(deps.storage)?;
         let admins = ADMINS.load(deps.storage)?;
 
-        let donation = cw_utils::must_pay(&info, &denom)?.u128();
+        let donation = cw_utils::must_pay(&info, &denom)
+            .map_err(|err| StdError::generic_err(err.to_string()))?
+            .u128();
 
         let donation_per_admin = donation / (admins.len() as u128);
 
@@ -336,6 +338,77 @@ mod tests {
                 .unwrap()
                 .value,
             "user"
+        );
+    }
+
+    #[test]
+    fn donations() {
+        let mut app = App::new(|router, _, storage| {
+            router
+                .bank
+                .init_balance(storage, &Addr::unchecked("user"), coins(5, "eth"))
+                .unwrap()
+        });
+
+        let code = ContractWrapper::new(execute, instantiate, query);
+        let code_id = app.store_code(Box::new(code));
+
+        let addr = app
+            .instantiate_contract(
+                code_id,
+                Addr::unchecked("owner"),
+                &InstantiateMsg {
+                    admins: vec!["admin1".to_owned(), "admin2".to_owned()],
+                    donation_denom: "eth".to_owned(),
+                },
+                &[],
+                "Contract",
+                None,
+            )
+            .unwrap();
+
+        app.execute_contract(
+            Addr::unchecked("user"),
+            addr.clone(),
+            &ExecuteMsg::Donate {},
+            &coins(5, "eth"),
+        )
+        .unwrap();
+
+        assert_eq!(
+            app.wrap()
+                .query_balance("user", "eth")
+                .unwrap()
+                .amount
+                .u128(),
+            0
+        );
+
+        assert_eq!(
+            app.wrap()
+                .query_balance(&addr, "eth")
+                .unwrap()
+                .amount
+                .u128(),
+            1
+        );
+
+        assert_eq!(
+            app.wrap()
+                .query_balance("admin1", "eth")
+                .unwrap()
+                .amount
+                .u128(),
+            2
+        );
+
+        assert_eq!(
+            app.wrap()
+                .query_balance("admin2", "eth")
+                .unwrap()
+                .amount
+                .u128(),
+            2
         );
     }
 }
