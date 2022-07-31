@@ -28,3 +28,4 @@ pub enum ExecuteMsg {
     AddMembers { admins: Vec<String> },
     Leave {},
 }
+
