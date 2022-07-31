@@ -429,7 +429,11 @@ mod tests {
                 code_id,
                 Addr::unchecked("owner"),
                 &InstantiateMsg {
-                    admins: vec!["admin1".to_owned(), "admin2".to_owned(), "admin1".to_owned()],
+                    admins: vec![
+                        "admin1".to_owned(),
+                        "admin2".to_owned(),
+                        "admin1".to_owned(),
+                    ],
                     donation_denom: "eth".to_owned(),
                 },
                 &[],
