@@ -60,6 +60,12 @@ mod exec {
         let mut curr_admins = ADMINS.load(deps.storage)?;
         authenticate_sender(&curr_admins, info)?;
 
+        let tmp: Vec<&str> = curr_admins.iter().map(|admin| admin.as_str()).collect();
+        let admins: Vec<String> = admins
+            .into_iter()
+            .filter(|admin| !tmp.contains(&admin.as_str()))
+            .collect();
+
         let events = admins
             .iter()
             .map(|admin| Event::new("admin_added").add_attribute("addr", admin));
