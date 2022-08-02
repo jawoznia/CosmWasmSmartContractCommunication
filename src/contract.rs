@@ -371,6 +371,74 @@ mod tests {
     }
 
     #[test]
+    fn secure_from_duplicated_admins() {
+        let mut app = App::default();
+
+        let code = ContractWrapper::new(execute, instantiate, query);
+        let code_id = app.store_code(Box::new(code));
+
+        let addr = app
+            .instantiate_contract(
+                code_id,
+                Addr::unchecked("owner"),
+                &InstantiateMsg {
+                    admins: vec!["owner".to_owned()],
+                    donation_denom: "eth".to_owned(),
+                },
+                &[],
+                "Contract",
+                None,
+            )
+            .unwrap();
+
+        let resp = app
+            .execute_contract(
+                Addr::unchecked("owner"),
+                addr,
+                &ExecuteMsg::AddMembers {
+                    admins: vec!["owner".to_owned(), "user".to_owned(), "owner".to_owned()],
+                },
+                &[],
+            )
+            .unwrap();
+
+        let wasm = resp.events.iter().find(|ev| ev.ty == "wasm").unwrap();
+        assert_eq!(
+            wasm.attributes
+                .iter()
+                .find(|attr| attr.key == "action")
+                .unwrap()
+                .value,
+            "add_members"
+        );
+        assert_eq!(
+            wasm.attributes
+                .iter()
+                .find(|attr| attr.key == "added_count")
+                .unwrap()
+                .value,
+            "1"
+        );
+
+        let admin_added: Vec<_> = resp
+            .events
+            .iter()
+            .filter(|ev| ev.ty == "wasm-admin_added")
+            .collect();
+        assert_eq!(admin_added.len(), 1);
+
+        assert_eq!(
+            admin_added[0]
+                .attributes
+                .iter()
+                .find(|attr| attr.key == "addr")
+                .unwrap()
+                .value,
+            "user"
+        );
+    }
+
+    #[test]
     fn donations() {
         let mut app = App::new(|router, _, storage| {
             router
