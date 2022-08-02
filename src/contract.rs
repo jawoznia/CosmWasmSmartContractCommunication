@@ -86,12 +86,12 @@ mod exec {
     }
 
     pub fn propose_admin(
-        deps: DepsMut,
-        info: MessageInfo,
+        _deps: DepsMut,
+        _info: MessageInfo,
         _addr: String,
     ) -> Result<Response, ContractError> {
-        let mut curr_admins = ADMINS.load(deps.storage)?;
-        authenticate_sender(&curr_admins, info)?;
+        //        let mut curr_admins = ADMINS.load(deps.storage)?;
+        //        authenticate_sender(&curr_admins, info)?;
 
         Ok(Response::new())
     }
@@ -133,15 +133,15 @@ mod exec {
     }
 
     fn authenticate_sender(
-        curr_admins: &Vec<Addr>,
+        curr_admins: &[Addr],
         info: MessageInfo,
     ) -> Result<(), ContractError> {
         if !curr_admins.contains(&info.sender) {
-            return Err(ContractError::Unauthorized {
+            Err(ContractError::Unauthorized {
                 sender: info.sender,
-            });
+            })
         } else {
-            return Ok(());
+            Ok(())
         }
     }
 }
