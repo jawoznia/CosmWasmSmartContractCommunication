@@ -41,12 +41,15 @@ pub fn execute(
 
     match msg {
         AddMembers { admins } => exec::add_members(deps, info, admins),
+        ProposeAdmin { addr } => exec::propose_admin(deps, info, addr),
         Leave {} => exec::leave(deps, info).map_err(Into::into),
         Donate {} => exec::donate(deps, info),
     }
 }
 
 mod exec {
+    use cosmwasm_std::Addr;
+
     use super::*;
 
     pub fn add_members(
@@ -55,11 +58,7 @@ mod exec {
         admins: Vec<String>,
     ) -> Result<Response, ContractError> {
         let mut curr_admins = ADMINS.load(deps.storage)?;
-        if !curr_admins.contains(&info.sender) {
-            return Err(ContractError::Unauthorized {
-                sender: info.sender,
-            });
-        }
+        authenticate_sender(&curr_admins, info)?;
 
         let events = admins
             .iter()
@@ -78,6 +77,17 @@ mod exec {
         ADMINS.save(deps.storage, &curr_admins)?;
 
         Ok(resp)
+    }
+
+    pub fn propose_admin(
+        deps: DepsMut,
+        info: MessageInfo,
+        _addr: String,
+    ) -> Result<Response, ContractError> {
+        let mut curr_admins = ADMINS.load(deps.storage)?;
+        authenticate_sender(&curr_admins, info)?;
+
+        Ok(Response::new())
     }
 
     pub fn leave(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
@@ -114,6 +124,19 @@ mod exec {
             .add_attribute("per_admin", donation_per_admin.to_string());
 
         Ok(resp)
+    }
+
+    fn authenticate_sender(
+        curr_admins: &Vec<Addr>,
+        info: MessageInfo,
+    ) -> Result<(), ContractError> {
+        if !curr_admins.contains(&info.sender) {
+            return Err(ContractError::Unauthorized {
+                sender: info.sender,
+            });
+        } else {
+            return Ok(());
+        }
     }
 }
 

@@ -13,6 +13,7 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     AddMembers { admins: Vec<String> },
+    ProposeAdmin {addr: String},
     Leave {},
     Donate {},
 }
