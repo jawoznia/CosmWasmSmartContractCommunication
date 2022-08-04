@@ -19,7 +19,28 @@ pub fn instantiate(
 
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use QueryMsg::*;
-    todo!()
+
+    match msg {
+        ApprovingAdmins {} => to_binary(&query::approving_admins()?),
+        VotesLeftForApproval {} => to_binary(&query::votes_left(deps)?),
+    }
+}
+
+mod query {
+    use crate::msg::{ApprovingAdminsResp, VotesLeftForApprovalResp};
+
+    use super::*;
+
+    pub fn approving_admins() -> StdResult<ApprovingAdminsResp> {
+        todo!()
+    }
+
+    pub fn votes_left(deps: Deps) -> StdResult<VotesLeftForApprovalResp> {
+        let resp = VotesLeftForApprovalResp {
+            votes_left: NEEDED_APPROVALS_LEFT.load(deps.storage)?,
+        };
+        Ok(resp)
+    }
 }
 
 pub fn execute(
