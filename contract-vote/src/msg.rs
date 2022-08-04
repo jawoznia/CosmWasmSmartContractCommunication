@@ -12,10 +12,9 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    AddVote { approved: bool },
+    Accept {},
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum QueryMsg {
-}
+pub enum QueryMsg {}
