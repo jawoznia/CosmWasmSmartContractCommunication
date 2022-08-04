@@ -28,6 +28,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         Greet {} => to_binary(&query::greet()?),
         AdminsList {} => to_binary(&query::admins_list(deps)?),
+        JoinTime { admin } => to_binary(&query::join_time(admin)?),
     }
 }
 
@@ -44,6 +45,7 @@ pub fn execute(
         ProposeAdmin { addr } => exec::propose_admin(deps, info, addr),
         Leave {} => exec::leave(deps, info).map_err(Into::into),
         Donate {} => exec::donate(deps, info),
+        Accept {} => exec::accept(deps, info),
     }
 }
 
@@ -132,6 +134,10 @@ mod exec {
         Ok(resp)
     }
 
+    pub fn accept(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+        todo!()
+    }
+
     fn authenticate_sender(curr_admins: &[Addr], info: MessageInfo) -> Result<(), ContractError> {
         if !curr_admins.contains(&info.sender) {
             Err(ContractError::Unauthorized {
@@ -144,6 +150,8 @@ mod exec {
 }
 
 mod query {
+    use crate::msg::JoinTimeResp;
+
     use super::*;
 
     pub fn greet() -> StdResult<GreetResp> {
@@ -158,6 +166,10 @@ mod query {
         let admins = ADMINS.load(deps.storage)?;
         let resp = AdminsListResp { admins };
         Ok(resp)
+    }
+
+    pub fn join_time(admin: String) -> StdResult<JoinTimeResp> {
+        todo!()
     }
 }
 
