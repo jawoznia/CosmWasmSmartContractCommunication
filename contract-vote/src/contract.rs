@@ -10,6 +10,7 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<()> {
+    NEEDED_VOTES_LEFT.save(deps.storage, &msg.required)?;
     Ok(())
 }
 
