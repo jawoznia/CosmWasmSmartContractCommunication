@@ -132,10 +132,7 @@ mod exec {
         Ok(resp)
     }
 
-    fn authenticate_sender(
-        curr_admins: &[Addr],
-        info: MessageInfo,
-    ) -> Result<(), ContractError> {
+    fn authenticate_sender(curr_admins: &[Addr], info: MessageInfo) -> Result<(), ContractError> {
         if !curr_admins.contains(&info.sender) {
             Err(ContractError::Unauthorized {
                 sender: info.sender,
