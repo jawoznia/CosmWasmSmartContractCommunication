@@ -17,4 +17,19 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    VotesLeftForApproval {},
+    ApprovingAdmins {},
+}
+
+#[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct VotesLeftForApprovalResp {
+    pub votes_left: u32,
+}
+
+#[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct ApprovingAdminsResp {
+    pub admins: Vec<Addr>,
+}
