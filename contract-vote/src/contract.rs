@@ -1,4 +1,4 @@
-use crate::msg::{ApprovingAdminsResp, InstantiateMsg, QueryMsg, VotesLeftResp};
+use crate::msg::{InstantiateMsg, QueryMsg, VotesLeftResp};
 use crate::state::{PROPOSED_ADMIN, REQUIRED_APPROVALS};
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
@@ -17,7 +17,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use QueryMsg::*;
 
     match msg {
-        ApprovingAdmins {} => to_binary(&query::approving_admins()?),
         VotesLeft {} => to_binary(&query::votes_left(deps)?),
         ProposedAdmin {} => to_binary(&query::proposed_admin(deps)?),
     }
@@ -27,10 +26,6 @@ mod query {
     use crate::{msg::ProposedAdminResp, state::PROPOSED_ADMIN};
 
     use super::*;
-
-    pub fn approving_admins() -> StdResult<ApprovingAdminsResp> {
-        todo!()
-    }
 
     pub fn votes_left(deps: Deps) -> StdResult<VotesLeftResp> {
         let resp = VotesLeftResp {
