@@ -1,10 +1,6 @@
-use crate::msg::{
-    AcceptMsg, ApprovingAdminsResp, InstantiateMsg, QueryMsg, VotesLeftForApprovalResp,
-};
-use crate::state::{NEEDED_APPROVALS_LEFT, PROPOSED_ADMIN, VOTES};
-use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdResult,
-};
+use crate::msg::{ApprovingAdminsResp, InstantiateMsg, QueryMsg, VotesLeftForApprovalResp};
+use crate::state::{NEEDED_APPROVALS_LEFT, PROPOSED_ADMIN};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 pub fn instantiate(
     deps: DepsMut,
@@ -52,23 +48,33 @@ mod query {
     }
 }
 
-pub fn execute(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    _msg: AcceptMsg,
-) -> StdResult<Response> {
-    if VOTES.has(deps.storage, info.sender.clone()) {
-        return Ok(Response::new());
+pub mod exec {
+    use cosmwasm_std::{DepsMut, Empty, Env, MessageInfo, Response, StdResult};
+
+    use crate::{
+        msg::AcceptMsg,
+        state::{NEEDED_APPROVALS_LEFT, VOTES},
+    };
+
+    pub fn execute(
+        deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+        _msg: AcceptMsg,
+    ) -> StdResult<Response> {
+        if VOTES.has(deps.storage, info.sender.clone()) {
+            return Ok(Response::new());
+        }
+
+        NEEDED_APPROVALS_LEFT.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
+            Ok(votes_left - 1)
+        })?;
+
+        let empty_value = Empty {};
+        VOTES.save(deps.storage, info.sender, &empty_value)?;
+
+        Ok(Response::new())
     }
-    NEEDED_APPROVALS_LEFT.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
-        Ok(votes_left - 1)
-    })?;
-
-    let empty_value = Empty {};
-    VOTES.save(deps.storage, info.sender, &empty_value)?;
-
-    Ok(Response::new())
 }
 
 #[cfg(test)]
@@ -76,7 +82,7 @@ mod tests {
     use cosmwasm_std::Addr;
     use cw_multi_test::{App, ContractWrapper, Executor};
 
-    use crate::msg::ProposedAdminResp;
+    use crate::{contract::exec::execute, msg::{ProposedAdminResp, AcceptMsg}};
 
     use super::*;
 
@@ -149,13 +155,8 @@ mod tests {
 
         assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 3 });
 
-        app.execute_contract(
-            Addr::unchecked("admin1"),
-            addr.clone(),
-            &AcceptMsg {},
-            &[],
-        )
-        .unwrap();
+        app.execute_contract(Addr::unchecked("admin1"), addr.clone(), &AcceptMsg {}, &[])
+            .unwrap();
 
         let resp: VotesLeftForApprovalResp = app
             .wrap()
@@ -164,13 +165,8 @@ mod tests {
 
         assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 2 });
 
-        app.execute_contract(
-            Addr::unchecked("admin1"),
-            addr.clone(),
-            &AcceptMsg {},
-            &[],
-        )
-        .unwrap();
+        app.execute_contract(Addr::unchecked("admin1"), addr.clone(), &AcceptMsg {}, &[])
+            .unwrap();
 
         let resp: VotesLeftForApprovalResp = app
             .wrap()
@@ -179,13 +175,8 @@ mod tests {
 
         assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 2 });
 
-        app.execute_contract(
-            Addr::unchecked("admin2"),
-            addr.clone(),
-            &AcceptMsg {},
-            &[],
-        )
-        .unwrap();
+        app.execute_contract(Addr::unchecked("admin2"), addr.clone(), &AcceptMsg {}, &[])
+            .unwrap();
 
         let resp: VotesLeftForApprovalResp = app
             .wrap()
@@ -194,13 +185,8 @@ mod tests {
 
         assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 1 });
 
-        app.execute_contract(
-            Addr::unchecked("admin3"),
-            addr.clone(),
-            &AcceptMsg {},
-            &[],
-        )
-        .unwrap();
+        app.execute_contract(Addr::unchecked("admin3"), addr.clone(), &AcceptMsg {}, &[])
+            .unwrap();
 
         let resp: VotesLeftForApprovalResp = app
             .wrap()
@@ -209,13 +195,8 @@ mod tests {
 
         assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 0 });
 
-        app.execute_contract(
-            Addr::unchecked("admin3"),
-            addr.clone(),
-            &AcceptMsg {},
-            &[],
-        )
-        .unwrap();
+        app.execute_contract(Addr::unchecked("admin3"), addr.clone(), &AcceptMsg {}, &[])
+            .unwrap();
 
         let resp: VotesLeftForApprovalResp = app
             .wrap()
