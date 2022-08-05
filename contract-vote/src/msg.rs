@@ -20,6 +20,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     VotesLeftForApproval {},
     ApprovingAdmins {},
+    ProposedAdmin {},
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
@@ -32,4 +33,10 @@ pub struct VotesLeftForApprovalResp {
 #[serde(rename_all = "snake_case")]
 pub struct ApprovingAdminsResp {
     pub admins: Vec<Addr>,
+}
+
+#[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct ProposedAdminResp {
+    pub admin: Addr,
 }

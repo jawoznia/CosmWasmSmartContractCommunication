@@ -3,7 +3,7 @@ use std::ops::Add;
 use crate::msg::{
     ApprovingAdminsResp, ExecuteMsg, InstantiateMsg, QueryMsg, VotesLeftForApprovalResp,
 };
-use crate::state::{NEEDED_APPROVALS_LEFT, VOTES};
+use crate::state::{NEEDED_APPROVALS_LEFT, PROPOSED_ADMIN, VOTES};
 use cosmwasm_std::{
     coins, to_binary, BankMsg, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Response,
     StdError, StdResult,
@@ -16,6 +16,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     NEEDED_APPROVALS_LEFT.save(deps.storage, &msg.required)?;
+    PROPOSED_ADMIN.save(deps.storage, &msg.proposed_admin)?;
     Ok(Response::new())
 }
 
@@ -25,10 +26,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         ApprovingAdmins {} => to_binary(&query::approving_admins()?),
         VotesLeftForApproval {} => to_binary(&query::votes_left(deps)?),
+        ProposedAdmin {} => to_binary(&query::proposed_admin(deps)?),
     }
 }
 
 mod query {
+
+    use crate::{msg::ProposedAdminResp, state::PROPOSED_ADMIN};
 
     use super::*;
 
@@ -39,6 +43,13 @@ mod query {
     pub fn votes_left(deps: Deps) -> StdResult<VotesLeftForApprovalResp> {
         let resp = VotesLeftForApprovalResp {
             votes_left: NEEDED_APPROVALS_LEFT.load(deps.storage)?,
+        };
+        Ok(resp)
+    }
+
+    pub fn proposed_admin(deps: Deps) -> StdResult<ProposedAdminResp> {
+        let resp = ProposedAdminResp {
+            admin: PROPOSED_ADMIN.load(deps.storage)?,
         };
         Ok(resp)
     }
@@ -75,6 +86,8 @@ mod tests {
     use cosmwasm_std::Addr;
     use cw_multi_test::{App, ContractWrapper, Executor};
 
+    use crate::msg::ProposedAdminResp;
+
     use super::*;
 
     #[test]
@@ -100,35 +113,21 @@ mod tests {
 
         let resp: VotesLeftForApprovalResp = app
             .wrap()
-            .query_wasm_smart(addr, &QueryMsg::VotesLeftForApproval {})
+            .query_wasm_smart(addr.clone(), &QueryMsg::VotesLeftForApproval {})
             .unwrap();
 
         assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 3 });
 
-        // let addr = app
-        //     .instantiate_contract(
-        //         code_id,
-        //         Addr::unchecked("owner"),
-        //         &InstantiateMsg {
-        //             admins: vec!["admin1".to_owned(), "admin2".to_owned()],
-        //             donation_denom: "eth".to_owned(),
-        //         },
-        //         &[],
-        //         "Contract 2",
-        //         None,
-        //     )
-        //     .unwrap();
+        let resp: ProposedAdminResp = app
+            .wrap()
+            .query_wasm_smart(addr, &QueryMsg::ProposedAdmin {})
+            .unwrap();
 
-        // let resp: AdminsListResp = app
-        //     .wrap()
-        //     .query_wasm_smart(addr, &QueryMsg::AdminsList {})
-        //     .unwrap();
-
-        // assert_eq!(
-        //     resp,
-        //     AdminsListResp {
-        //         admins: vec![Addr::unchecked("admin1"), Addr::unchecked("admin2")],
-        //     }
-        // );
+        assert_eq!(
+            resp,
+            ProposedAdminResp {
+                admin: Addr::unchecked("new_admin")
+            }
+        );
     }
 }
