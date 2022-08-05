@@ -1,6 +1,8 @@
 use std::ops::Add;
 
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{
+    ApprovingAdminsResp, ExecuteMsg, InstantiateMsg, QueryMsg, VotesLeftForApprovalResp,
+};
 use crate::state::{NEEDED_APPROVALS_LEFT, VOTES};
 use cosmwasm_std::{
     coins, to_binary, BankMsg, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Response,
@@ -27,7 +29,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 mod query {
-    use crate::msg::{ApprovingAdminsResp, VotesLeftForApprovalResp};
 
     use super::*;
 
@@ -97,12 +98,12 @@ mod tests {
             )
             .unwrap();
 
-        // let resp: AdminsListResp = app
-        //     .wrap()
-        //     .query_wasm_smart(addr, &QueryMsg::AdminsList {})
-        //     .unwrap();
+        let resp: VotesLeftForApprovalResp = app
+            .wrap()
+            .query_wasm_smart(addr, &QueryMsg::VotesLeftForApproval {})
+            .unwrap();
 
-        // assert_eq!(resp, AdminsListResp { admins: vec![] });
+        assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 3 });
 
         // let addr = app
         //     .instantiate_contract(
