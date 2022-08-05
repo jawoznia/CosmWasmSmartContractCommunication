@@ -1,6 +1,7 @@
 use crate::error::ContractError;
 use crate::msg::{AdminsListResp, ExecuteMsg, GreetResp, InstantiateMsg, QueryMsg};
 use crate::state::{ADMINS, DONATION_DENOM, VOTE_CODE_ID};
+use contract_vote::msg::InstantiateMsg as VoteInstantiate;
 use cosmwasm_std::StdError;
 use cosmwasm_std::{
     coins, to_binary, BankMsg, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult,
@@ -56,12 +57,13 @@ pub fn execute(
     }
 }
 
-mod exec {
+pub mod exec {
     use cosmwasm_std::Addr;
     use cosmwasm_std::SubMsg;
+    use cosmwasm_std::SubMsgResult;
+    use cw_utils::parse_instantiate_response_data;
 
     use super::*;
-    use contract_vote::msg::InstantiateMsg as VoteInstantiate;
     use cosmwasm_std::WasmMsg;
 
     pub fn add_members(
@@ -160,6 +162,21 @@ mod exec {
         Ok(resp)
     }
 
+    pub fn vote_instantiate_reply(msg: SubMsgResult) -> StdResult<Response> {
+        let resp = match msg.into_result() {
+            Ok(resp) => resp,
+            Err(err) => return Err(StdError::generic_err(err)),
+        };
+
+        let data = resp
+            .data
+            .ok_or_else(|| StdError::generic_err("No instantiate response data"))?;
+        parse_instantiate_response_data(&data)
+            .map_err(|err| StdError::generic_err(err.to_string()))?;
+
+        Ok(Response::new())
+    }
+
     pub fn accept(_deps: DepsMut, _info: MessageInfo) -> Result<Response, ContractError> {
         todo!()
     }
@@ -205,6 +222,7 @@ mod tests {
     use cw_multi_test::{App, ContractWrapper, Executor};
 
     use crate::msg::AdminsListResp;
+    use crate::reply;
 
     use super::*;
 
@@ -549,5 +567,53 @@ mod tests {
                 .u128(),
             2
         );
+    }
+
+    use contract_vote::execute as vote_execute;
+    use contract_vote::instantiate as vote_instantiate;
+    use contract_vote::query as vote_query;
+
+    #[test]
+    fn propose_admin() {
+        let mut app = App::default();
+
+        let code = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
+        let code_id = app.store_code(Box::new(code));
+
+        let vote_code = ContractWrapper::new(vote_execute, vote_instantiate, vote_query);
+        let vote_code_id = app.store_code(Box::new(vote_code));
+
+        let addr = app
+            .instantiate_contract(
+                code_id,
+                Addr::unchecked("owner"),
+                &InstantiateMsg {
+                    admins: vec![],
+                    donation_denom: "eth".to_owned(),
+                    vote_code_id: vote_code_id,
+                },
+                &[],
+                "Contract",
+                None,
+            )
+            .unwrap();
+
+        let resp: AdminsListResp = app
+            .wrap()
+            .query_wasm_smart(addr.clone(), &QueryMsg::AdminsList {})
+            .unwrap();
+
+        assert_eq!(resp, AdminsListResp { admins: vec![] });
+
+        app.execute_contract(
+            Addr::unchecked("owner"),
+            addr.clone(),
+            &ExecuteMsg::ProposeAdmin {
+                addr: Addr::unchecked("proposed_admin"),
+                required_votes: 2,
+            },
+            &[],
+        )
+        .unwrap();
     }
 }
