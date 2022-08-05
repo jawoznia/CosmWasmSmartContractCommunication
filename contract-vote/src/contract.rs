@@ -1,12 +1,9 @@
-use std::ops::Add;
-
 use crate::msg::{
-    ApprovingAdminsResp, ExecuteMsg, InstantiateMsg, QueryMsg, VotesLeftForApprovalResp,
+    AcceptMsg, ApprovingAdminsResp, InstantiateMsg, QueryMsg, VotesLeftForApprovalResp,
 };
 use crate::state::{NEEDED_APPROVALS_LEFT, PROPOSED_ADMIN, VOTES};
 use cosmwasm_std::{
-    coins, to_binary, BankMsg, Binary, Deps, DepsMut, Empty, Env, Event, MessageInfo, Response,
-    StdError, StdResult,
+    to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdResult,
 };
 
 pub fn instantiate(
@@ -59,27 +56,19 @@ pub fn execute(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: ExecuteMsg,
+    _msg: AcceptMsg,
 ) -> StdResult<Response> {
-    match msg {
-        Accept => {
-            if VOTES.has(deps.storage, info.sender.clone()) {
-                // return Err(StdError::generic_err(format!(
-                //     "{} has already voted!",
-                //     &info.sender
-                // )));
-                return Ok(Response::new())
-            }
-            NEEDED_APPROVALS_LEFT.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
-                Ok(votes_left - 1)
-            })?;
-
-            let empty_value = Empty {};
-            VOTES.save(deps.storage, info.sender, &empty_value)?;
-
-            Ok(Response::new())
-        }
+    if VOTES.has(deps.storage, info.sender.clone()) {
+        return Ok(Response::new());
     }
+    NEEDED_APPROVALS_LEFT.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
+        Ok(votes_left - 1)
+    })?;
+
+    let empty_value = Empty {};
+    VOTES.save(deps.storage, info.sender, &empty_value)?;
+
+    Ok(Response::new())
 }
 
 #[cfg(test)]
@@ -163,7 +152,7 @@ mod tests {
         app.execute_contract(
             Addr::unchecked("admin1"),
             addr.clone(),
-            &ExecuteMsg::Accept {},
+            &AcceptMsg {},
             &[],
         )
         .unwrap();
@@ -178,7 +167,7 @@ mod tests {
         app.execute_contract(
             Addr::unchecked("admin1"),
             addr.clone(),
-            &ExecuteMsg::Accept {},
+            &AcceptMsg {},
             &[],
         )
         .unwrap();
@@ -193,7 +182,7 @@ mod tests {
         app.execute_contract(
             Addr::unchecked("admin2"),
             addr.clone(),
-            &ExecuteMsg::Accept {},
+            &AcceptMsg {},
             &[],
         )
         .unwrap();
@@ -208,7 +197,7 @@ mod tests {
         app.execute_contract(
             Addr::unchecked("admin3"),
             addr.clone(),
-            &ExecuteMsg::Accept {},
+            &AcceptMsg {},
             &[],
         )
         .unwrap();
@@ -223,7 +212,7 @@ mod tests {
         app.execute_contract(
             Addr::unchecked("admin3"),
             addr.clone(),
-            &ExecuteMsg::Accept {},
+            &AcceptMsg {},
             &[],
         )
         .unwrap();

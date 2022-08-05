@@ -134,7 +134,7 @@ mod exec {
         Ok(resp)
     }
 
-    pub fn accept(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
+    pub fn accept(_deps: DepsMut, _info: MessageInfo) -> Result<Response, ContractError> {
         todo!()
     }
 
@@ -168,7 +168,7 @@ mod query {
         Ok(resp)
     }
 
-    pub fn join_time(admin: String) -> StdResult<JoinTimeResp> {
+    pub fn join_time(_admin: String) -> StdResult<JoinTimeResp> {
         todo!()
     }
 }

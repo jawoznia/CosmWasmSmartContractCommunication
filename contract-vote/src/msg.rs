@@ -11,9 +11,7 @@ pub struct InstantiateMsg {
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum ExecuteMsg {
-    Accept {},
-}
+pub struct AcceptMsg {}
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
