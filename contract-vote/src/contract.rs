@@ -50,7 +50,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
-        AddVote => {
+        Accept => {
             if VOTES.has(deps.storage, info.sender.clone()) {
                 return Err(StdError::generic_err(format!(
                     "{} has already voted!",
@@ -66,69 +66,68 @@ pub fn execute(
 
             Ok(Response::new())
         }
-        _ => return Err(StdError::generic_err("Unimplemented")),
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use cosmwasm_std::Addr;
-//     use cw_multi_test::{App, ContractWrapper, Executor};
+#[cfg(test)]
+mod tests {
+    use cosmwasm_std::Addr;
+    use cw_multi_test::{App, ContractWrapper, Executor};
 
-//     use super::*;
+    use super::*;
 
-//     #[test]
-//     fn instantiation() {
-//         let mut app = App::default();
+    #[test]
+    fn instantiation() {
+        let mut app = App::default();
 
-//         let code = ContractWrapper::new(execute, instantiate, query);
-//         let code_id = app.store_code(Box::new(code));
+        let code = ContractWrapper::new(execute, instantiate, query);
+        let code_id = app.store_code(Box::new(code));
 
-//         let addr = app
-//             .instantiate_contract(
-//                 code_id,
-//                 Addr::unchecked("owner"),
-//                 &InstantiateMsg {
-//                     admins: vec![],
-//                     donation_denom: "eth".to_owned(),
-//                 },
-//                 &[],
-//                 "Contract",
-//                 None,
-//             )
-//             .unwrap();
+        let addr = app
+            .instantiate_contract(
+                code_id,
+                Addr::unchecked("owner"),
+                &InstantiateMsg {
+                    proposed_admin: Addr::unchecked("new_admin"),
+                    required: 3,
+                },
+                &[],
+                "Contract",
+                None,
+            )
+            .unwrap();
 
-//         let resp: AdminsListResp = app
-//             .wrap()
-//             .query_wasm_smart(addr, &QueryMsg::AdminsList {})
-//             .unwrap();
+        // let resp: AdminsListResp = app
+        //     .wrap()
+        //     .query_wasm_smart(addr, &QueryMsg::AdminsList {})
+        //     .unwrap();
 
-//         assert_eq!(resp, AdminsListResp { admins: vec![] });
+        // assert_eq!(resp, AdminsListResp { admins: vec![] });
 
-//         let addr = app
-//             .instantiate_contract(
-//                 code_id,
-//                 Addr::unchecked("owner"),
-//                 &InstantiateMsg {
-//                     admins: vec!["admin1".to_owned(), "admin2".to_owned()],
-//                     donation_denom: "eth".to_owned(),
-//                 },
-//                 &[],
-//                 "Contract 2",
-//                 None,
-//             )
-//             .unwrap();
+        // let addr = app
+        //     .instantiate_contract(
+        //         code_id,
+        //         Addr::unchecked("owner"),
+        //         &InstantiateMsg {
+        //             admins: vec!["admin1".to_owned(), "admin2".to_owned()],
+        //             donation_denom: "eth".to_owned(),
+        //         },
+        //         &[],
+        //         "Contract 2",
+        //         None,
+        //     )
+        //     .unwrap();
 
-//         let resp: AdminsListResp = app
-//             .wrap()
-//             .query_wasm_smart(addr, &QueryMsg::AdminsList {})
-//             .unwrap();
+        // let resp: AdminsListResp = app
+        //     .wrap()
+        //     .query_wasm_smart(addr, &QueryMsg::AdminsList {})
+        //     .unwrap();
 
-//         assert_eq!(
-//             resp,
-//             AdminsListResp {
-//                 admins: vec![Addr::unchecked("admin1"), Addr::unchecked("admin2")],
-//             }
-//         );
-//     }
-// }
+        // assert_eq!(
+        //     resp,
+        //     AdminsListResp {
+        //         admins: vec![Addr::unchecked("admin1"), Addr::unchecked("admin2")],
+        //     }
+        // );
+    }
+}
