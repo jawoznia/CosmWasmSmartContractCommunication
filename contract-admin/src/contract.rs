@@ -53,7 +53,6 @@ pub fn execute(
         } => exec::propose_admin(deps, info, addr, required_votes),
         Leave {} => exec::leave(deps, info).map_err(Into::into),
         Donate {} => exec::donate(deps, info),
-        Accept {} => exec::accept(deps, info),
     }
 }
 
@@ -175,10 +174,6 @@ pub mod exec {
             .map_err(|err| StdError::generic_err(err.to_string()))?;
 
         Ok(Response::new())
-    }
-
-    pub fn accept(_deps: DepsMut, _info: MessageInfo) -> Result<Response, ContractError> {
-        todo!()
     }
 
     fn authenticate_sender(curr_admins: &[Addr], info: MessageInfo) -> Result<(), ContractError> {
