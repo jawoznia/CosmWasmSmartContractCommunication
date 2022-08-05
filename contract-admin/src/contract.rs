@@ -1,10 +1,13 @@
 use crate::error::ContractError;
 use crate::msg::{AdminsListResp, ExecuteMsg, GreetResp, InstantiateMsg, QueryMsg};
-use crate::state::{ADMINS, DONATION_DENOM};
+use crate::state::{ADMINS, DONATION_DENOM, VOTE_CODE_ID};
 use cosmwasm_std::StdError;
 use cosmwasm_std::{
     coins, to_binary, BankMsg, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult,
 };
+
+pub const VOTE_INSTANTIATE_ID: u64 = 1;
+
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
@@ -18,6 +21,7 @@ pub fn instantiate(
         .collect();
     ADMINS.save(deps.storage, &admins?)?;
     DONATION_DENOM.save(deps.storage, &msg.donation_denom)?;
+    VOTE_CODE_ID.save(deps.storage, &msg.vote_code_id)?;
 
     Ok(Response::new())
 }
@@ -42,7 +46,10 @@ pub fn execute(
 
     match msg {
         AddMembers { admins } => exec::add_members(deps, info, admins),
-        ProposeAdmin { addr } => exec::propose_admin(deps, info, addr),
+        ProposeAdmin {
+            addr,
+            required_votes,
+        } => exec::propose_admin(deps, info, addr, required_votes),
         Leave {} => exec::leave(deps, info).map_err(Into::into),
         Donate {} => exec::donate(deps, info),
         Accept {} => exec::accept(deps, info),
@@ -51,8 +58,11 @@ pub fn execute(
 
 mod exec {
     use cosmwasm_std::Addr;
+    use cosmwasm_std::SubMsg;
 
     use super::*;
+    use contract_vote::msg::InstantiateMsg as VoteInstantiate;
+    use cosmwasm_std::WasmMsg;
 
     pub fn add_members(
         deps: DepsMut,
@@ -88,14 +98,30 @@ mod exec {
     }
 
     pub fn propose_admin(
-        _deps: DepsMut,
-        _info: MessageInfo,
-        _addr: String,
+        deps: DepsMut,
+        info: MessageInfo,
+        addr: Addr,
+        required_votes: u32,
     ) -> Result<Response, ContractError> {
-        //        let mut curr_admins = ADMINS.load(deps.storage)?;
-        //        authenticate_sender(&curr_admins, info)?;
+        let msg = VoteInstantiate {
+            required: required_votes,
+            proposed_admin: addr,
+        };
 
-        Ok(Response::new())
+        let msg = WasmMsg::Instantiate {
+            admin: None,
+            code_id: VOTE_CODE_ID.load(deps.storage)?,
+            msg: to_binary(&msg)?,
+            funds: vec![],
+            label: format!("peer-{}", info.sender),
+        };
+
+        let resp = Response::new()
+            .add_submessage(SubMsg::reply_on_success(msg, VOTE_INSTANTIATE_ID))
+            .add_attribute("action", "propose_admin")
+            .add_attribute("sender", info.sender);
+
+        Ok(resp)
     }
 
     pub fn leave(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
@@ -196,6 +222,7 @@ mod tests {
                 &InstantiateMsg {
                     admins: vec![],
                     donation_denom: "eth".to_owned(),
+                    vote_code_id: VOTE_INSTANTIATE_ID,
                 },
                 &[],
                 "Contract",
@@ -217,6 +244,7 @@ mod tests {
                 &InstantiateMsg {
                     admins: vec!["admin1".to_owned(), "admin2".to_owned()],
                     donation_denom: "eth".to_owned(),
+                    vote_code_id: VOTE_INSTANTIATE_ID,
                 },
                 &[],
                 "Contract 2",
@@ -251,6 +279,7 @@ mod tests {
                 &InstantiateMsg {
                     admins: vec![],
                     donation_denom: "eth".to_owned(),
+                    vote_code_id: VOTE_INSTANTIATE_ID,
                 },
                 &[],
                 "Contract",
@@ -285,6 +314,7 @@ mod tests {
                 &InstantiateMsg {
                     admins: vec![],
                     donation_denom: "eth".to_owned(),
+                    vote_code_id: VOTE_INSTANTIATE_ID,
                 },
                 &[],
                 "Contract",
@@ -325,6 +355,7 @@ mod tests {
                 &InstantiateMsg {
                     admins: vec!["owner".to_owned()],
                     donation_denom: "eth".to_owned(),
+                    vote_code_id: VOTE_INSTANTIATE_ID,
                 },
                 &[],
                 "Contract",
@@ -393,6 +424,7 @@ mod tests {
                 &InstantiateMsg {
                     admins: vec!["owner".to_owned()],
                     donation_denom: "eth".to_owned(),
+                    vote_code_id: VOTE_INSTANTIATE_ID,
                 },
                 &[],
                 "Contract",
@@ -466,6 +498,7 @@ mod tests {
                 &InstantiateMsg {
                     admins: vec!["admin1".to_owned(), "admin2".to_owned()],
                     donation_denom: "eth".to_owned(),
+                    vote_code_id: VOTE_INSTANTIATE_ID,
                 },
                 &[],
                 "Contract",

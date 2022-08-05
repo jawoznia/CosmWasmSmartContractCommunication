@@ -7,13 +7,14 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub admins: Vec<String>,
     pub donation_denom: String,
+    pub vote_code_id: u64,
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     AddMembers { admins: Vec<String> },
-    ProposeAdmin { addr: String },
+    ProposeAdmin { addr: Addr, required_votes: u32 },
     // How admins know that there is a voting ongoing and they need to send Accept message
     // Blockchain does not inform users about that. This is purely done on f.e. discord.
     // I believe you can also watch messages on blockchain which can give you a hint about that.
