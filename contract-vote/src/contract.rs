@@ -64,10 +64,11 @@ pub fn execute(
     match msg {
         Accept => {
             if VOTES.has(deps.storage, info.sender.clone()) {
-                return Err(StdError::generic_err(format!(
-                    "{} has already voted!",
-                    &info.sender
-                )));
+                // return Err(StdError::generic_err(format!(
+                //     "{} has already voted!",
+                //     &info.sender
+                // )));
+                return Ok(Response::new())
             }
             NEEDED_APPROVALS_LEFT.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
                 Ok(votes_left - 1)
@@ -129,5 +130,109 @@ mod tests {
                 admin: Addr::unchecked("new_admin")
             }
         );
+    }
+
+    #[test]
+    fn accept() {
+        let mut app = App::default();
+
+        let code = ContractWrapper::new(execute, instantiate, query);
+        let code_id = app.store_code(Box::new(code));
+
+        let addr = app
+            .instantiate_contract(
+                code_id,
+                Addr::unchecked("owner"),
+                &InstantiateMsg {
+                    proposed_admin: Addr::unchecked("new_admin"),
+                    required: 3,
+                },
+                &[],
+                "Contract",
+                None,
+            )
+            .unwrap();
+
+        let resp: VotesLeftForApprovalResp = app
+            .wrap()
+            .query_wasm_smart(addr.clone(), &QueryMsg::VotesLeftForApproval {})
+            .unwrap();
+
+        assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 3 });
+
+        app.execute_contract(
+            Addr::unchecked("admin1"),
+            addr.clone(),
+            &ExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
+
+        let resp: VotesLeftForApprovalResp = app
+            .wrap()
+            .query_wasm_smart(addr.clone(), &QueryMsg::VotesLeftForApproval {})
+            .unwrap();
+
+        assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 2 });
+
+        app.execute_contract(
+            Addr::unchecked("admin1"),
+            addr.clone(),
+            &ExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
+
+        let resp: VotesLeftForApprovalResp = app
+            .wrap()
+            .query_wasm_smart(addr.clone(), &QueryMsg::VotesLeftForApproval {})
+            .unwrap();
+
+        assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 2 });
+
+        app.execute_contract(
+            Addr::unchecked("admin2"),
+            addr.clone(),
+            &ExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
+
+        let resp: VotesLeftForApprovalResp = app
+            .wrap()
+            .query_wasm_smart(addr.clone(), &QueryMsg::VotesLeftForApproval {})
+            .unwrap();
+
+        assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 1 });
+
+        app.execute_contract(
+            Addr::unchecked("admin3"),
+            addr.clone(),
+            &ExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
+
+        let resp: VotesLeftForApprovalResp = app
+            .wrap()
+            .query_wasm_smart(addr.clone(), &QueryMsg::VotesLeftForApproval {})
+            .unwrap();
+
+        assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 0 });
+
+        app.execute_contract(
+            Addr::unchecked("admin3"),
+            addr.clone(),
+            &ExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
+
+        let resp: VotesLeftForApprovalResp = app
+            .wrap()
+            .query_wasm_smart(addr.clone(), &QueryMsg::VotesLeftForApproval {})
+            .unwrap();
+
+        assert_eq!(resp, VotesLeftForApprovalResp { votes_left: 0 });
     }
 }
