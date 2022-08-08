@@ -1,8 +1,7 @@
+use contract_msgs::vote::{AcceptMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-use msg::{AcceptMsg, InstantiateMsg, QueryMsg};
 
 pub mod contract;
-pub mod msg;
 pub mod state;
 
 #[cfg_attr(not(feature = "library"), entry_point)]

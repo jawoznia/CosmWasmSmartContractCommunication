@@ -1,7 +1,9 @@
 use crate::error::ContractError;
-use crate::msg::{AdminsListResp, ExecuteMsg, GreetResp, InstantiateMsg, QueryMsg};
 use crate::state::{ADMINS, DONATION_DENOM, VOTE_CODE_ID};
-use contract_vote::msg::InstantiateMsg as VoteInstantiate;
+use contract_msgs::admin::{
+    AdminsListResp, ExecuteMsg, GreetResp, InstantiateMsg, JoinTimeResp, QueryMsg,
+};
+use contract_msgs::vote::InstantiateMsg as VoteInstantiate;
 use cosmwasm_std::StdError;
 use cosmwasm_std::{
     coins, to_binary, BankMsg, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult,
@@ -188,8 +190,6 @@ pub mod exec {
 }
 
 mod query {
-    use crate::msg::JoinTimeResp;
-
     use super::*;
 
     pub fn greet() -> StdResult<GreetResp> {
@@ -213,11 +213,9 @@ mod query {
 
 #[cfg(test)]
 mod tests {
+    use crate::reply;
     use cosmwasm_std::Addr;
     use cw_multi_test::{App, ContractWrapper, Executor};
-
-    use crate::msg::AdminsListResp;
-    use crate::reply;
 
     use super::*;
 

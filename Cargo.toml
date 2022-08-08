@@ -1,2 +1,2 @@
 [workspace]
-members = ["contract-admin", "contract-vote"]
+members = ["contract-admin", "contract-vote", "contract-msgs"]

@@ -1,5 +1,5 @@
-use crate::msg::{InstantiateMsg, QueryMsg, VotesLeftResp};
 use crate::state::{PROPOSED_ADMIN, REQUIRED_APPROVALS};
+use contract_msgs::vote::{InstantiateMsg, QueryMsg, VotesLeftResp};
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 pub fn instantiate(
@@ -23,7 +23,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 mod query {
-    use crate::{msg::ProposedAdminResp, state::PROPOSED_ADMIN};
+    use crate::state::PROPOSED_ADMIN;
+    use contract_msgs::vote::ProposedAdminResp;
 
     use super::*;
 
@@ -45,10 +46,8 @@ mod query {
 pub mod exec {
     use cosmwasm_std::{DepsMut, Empty, Env, MessageInfo, Response, StdResult};
 
-    use crate::{
-        msg::AcceptMsg,
-        state::{REQUIRED_APPROVALS, VOTES},
-    };
+    use crate::state::{REQUIRED_APPROVALS, VOTES};
+    use contract_msgs::vote::AcceptMsg;
 
     pub fn execute(
         deps: DepsMut,
@@ -76,10 +75,8 @@ mod tests {
     use cosmwasm_std::Addr;
     use cw_multi_test::{App, ContractWrapper, Executor};
 
-    use crate::{
-        contract::exec::execute,
-        msg::{AcceptMsg, ProposedAdminResp},
-    };
+    use crate::contract::exec::execute;
+    use contract_msgs::vote::{AcceptMsg, ProposedAdminResp};
 
     use super::*;
 
