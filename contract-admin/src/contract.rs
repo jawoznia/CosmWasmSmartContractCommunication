@@ -54,7 +54,8 @@ pub fn execute(
         ProposeAdmin {
             addr,
             required_votes,
-        } => exec::propose_admin(deps, info, addr, required_votes),
+            admin_code_id,
+        } => exec::propose_admin(deps, info, addr, required_votes, admin_code_id),
         Leave {} => exec::leave(deps, info).map_err(Into::into),
         Donate {} => exec::donate(deps, info),
     }
@@ -113,10 +114,12 @@ pub mod exec {
         info: MessageInfo,
         addr: Addr,
         required_votes: u32,
+        admin_code_id: u64,
     ) -> Result<Response, ContractError> {
         let msg = VoteInstantiate {
             required: required_votes,
             proposed_admin: addr,
+            admin_code_id,
         };
 
         let msg = WasmMsg::Instantiate {
@@ -238,8 +241,13 @@ mod query {
 #[cfg(test)]
 mod tests {
     use crate::reply;
+
     use cosmwasm_std::Addr;
     use cw_multi_test::{App, ContractWrapper, Executor};
+
+    use contract_vote::execute as vote_execute;
+    use contract_vote::instantiate as vote_instantiate;
+    use contract_vote::query as vote_query;
 
     use super::*;
 
@@ -586,12 +594,9 @@ mod tests {
         );
     }
 
-    use contract_vote::execute as vote_execute;
-    use contract_vote::instantiate as vote_instantiate;
-    use contract_vote::query as vote_query;
-
     #[test]
     fn propose_admin() {
+        let admin_code_id = 1;
         let mut app = App::default();
 
         let code = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
@@ -628,6 +633,7 @@ mod tests {
             &ExecuteMsg::ProposeAdmin {
                 addr: Addr::unchecked("proposed_admin"),
                 required_votes: 2,
+                admin_code_id,
             },
             &[],
         )
