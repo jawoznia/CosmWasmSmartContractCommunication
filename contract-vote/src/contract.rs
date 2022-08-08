@@ -44,10 +44,15 @@ mod query {
 }
 
 pub mod exec {
-    use cosmwasm_std::{DepsMut, Empty, Env, MessageInfo, Response, StdResult};
+    use cosmwasm_std::{
+        to_binary, DepsMut, Empty, Env, MessageInfo, Response, StdError, StdResult, SubMsg,
+        SubMsgResult, WasmMsg,
+    };
 
-    use crate::state::{REQUIRED_APPROVALS, VOTES};
+    use crate::state::{ADMIN_CODE_ID, REQUIRED_APPROVALS, VOTES};
     use contract_msgs::vote::AcceptMsg;
+
+    pub const ADMIN_JOIN_TIME_QUERY_ID: u64 = 1;
 
     pub fn execute(
         deps: DepsMut,
@@ -64,7 +69,33 @@ pub mod exec {
         })?;
 
         let empty_value = Empty {};
-        VOTES.save(deps.storage, info.sender, &empty_value)?;
+        VOTES.save(deps.storage, info.sender.clone(), &empty_value)?;
+
+        let msg = contract_msgs::admin::QueryMsg::JoinTime {
+            admin: info.sender.clone(),
+        };
+
+        let msg = WasmMsg::Instantiate {
+            admin: None,
+            code_id: ADMIN_CODE_ID.load(deps.storage)?,
+            msg: to_binary(&msg)?,
+            funds: vec![],
+            label: format!("peer-{}", info.sender),
+        };
+
+        let resp = Response::new()
+            .add_submessage(SubMsg::reply_on_success(msg, ADMIN_JOIN_TIME_QUERY_ID))
+            .add_attribute("action", "propose_admin")
+            .add_attribute("sender", info.sender);
+
+        Ok(resp)
+    }
+
+    pub fn admin_join_time_reply(msg: SubMsgResult) -> StdResult<Response> {
+        let _resp = match msg.into_result() {
+            Ok(resp) => resp,
+            Err(err) => return Err(StdError::generic_err(err)),
+        };
 
         Ok(Response::new())
     }
@@ -72,11 +103,11 @@ pub mod exec {
 
 #[cfg(test)]
 mod tests {
+    use crate::contract::exec::execute;
+    use crate::reply;
+    use contract_msgs::vote::{AcceptMsg, ProposedAdminResp};
     use cosmwasm_std::Addr;
     use cw_multi_test::{App, ContractWrapper, Executor};
-
-    use crate::contract::exec::execute;
-    use contract_msgs::vote::{AcceptMsg, ProposedAdminResp};
 
     use super::*;
 
@@ -125,7 +156,7 @@ mod tests {
     fn accept() {
         let mut app = App::default();
 
-        let code = ContractWrapper::new(execute, instantiate, query);
+        let code = ContractWrapper::new(execute, instantiate, query).with_reply(reply);
         let code_id = app.store_code(Box::new(code));
 
         let addr = app

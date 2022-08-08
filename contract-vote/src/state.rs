@@ -7,3 +7,4 @@ use cw_storage_plus::{Item, Map};
 pub const VOTES: Map<Addr, Empty> = Map::new("votes");
 pub const REQUIRED_APPROVALS: Item<u32> = Item::new("required_approvals");
 pub const PROPOSED_ADMIN: Item<Addr> = Item::new("proposed_admin");
+pub const ADMIN_CODE_ID: Item<u64> = Item::new("admin_code_id");
