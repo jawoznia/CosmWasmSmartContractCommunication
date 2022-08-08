@@ -1,15 +1,16 @@
-use crate::state::{PROPOSED_ADMIN, REQUIRED_APPROVALS};
+use crate::state::{PROPOSED_ADMIN, REQUIRED_APPROVALS, START_TIME};
 use contract_msgs::vote::{InstantiateMsg, QueryMsg, VotesLeftResp};
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     REQUIRED_APPROVALS.save(deps.storage, &msg.required)?;
     PROPOSED_ADMIN.save(deps.storage, &msg.proposed_admin)?;
+    START_TIME.save(deps.storage, &env.block.time)?;
     Ok(Response::new())
 }
 
@@ -45,12 +46,12 @@ mod query {
 
 pub mod exec {
     use cosmwasm_std::{
-        to_binary, DepsMut, Empty, Env, MessageInfo, Response, StdError, StdResult, SubMsg,
-        SubMsgResult, WasmMsg,
+        from_binary, to_binary, DepsMut, Empty, Env, MessageInfo, Response, StdError, StdResult,
+        SubMsg, SubMsgResult, WasmMsg,
     };
 
-    use crate::state::{ADMIN_CODE_ID, REQUIRED_APPROVALS, VOTES};
-    use contract_msgs::vote::AcceptMsg;
+    use crate::state::{ADMIN_CODE_ID, ONGOING_VOTE, REQUIRED_APPROVALS, START_TIME, VOTES};
+    use contract_msgs::{admin::JoinTimeResp, vote::AcceptMsg};
 
     pub const ADMIN_JOIN_TIME_QUERY_ID: u64 = 1;
 
@@ -63,13 +64,7 @@ pub mod exec {
         if VOTES.has(deps.storage, info.sender.clone()) {
             return Ok(Response::new());
         }
-
-        REQUIRED_APPROVALS.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
-            Ok(votes_left - 1)
-        })?;
-
-        let empty_value = Empty {};
-        VOTES.save(deps.storage, info.sender.clone(), &empty_value)?;
+        ONGOING_VOTE.save(deps.storage, &info.sender)?;
 
         let msg = contract_msgs::admin::QueryMsg::JoinTime {
             admin: info.sender.clone(),
@@ -91,11 +86,29 @@ pub mod exec {
         Ok(resp)
     }
 
-    pub fn admin_join_time_reply(msg: SubMsgResult) -> StdResult<Response> {
-        let _resp = match msg.into_result() {
+    pub fn admin_join_time_reply(deps: DepsMut, msg: SubMsgResult) -> StdResult<Response> {
+        let resp = match msg.into_result() {
             Ok(resp) => resp,
             Err(err) => return Err(StdError::generic_err(err)),
         };
+
+        let tmp = resp.data.ok_or_else(|| StdError::generic_err("blabla"))?;
+
+        let tmp: JoinTimeResp = from_binary(&tmp)?;
+
+        if tmp.joined < START_TIME.load(deps.storage)? {
+            return Err(StdError::generic_err(
+                "Admin is not allowed to vote due to being approved after vote is created.",
+            ))?;
+        }
+
+        REQUIRED_APPROVALS.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
+            Ok(votes_left - 1)
+        })?;
+
+        let empty_value = Empty {};
+        let sender_addr = ONGOING_VOTE.load(deps.storage)?;
+        VOTES.save(deps.storage, sender_addr, &empty_value)?;
 
         Ok(Response::new())
     }

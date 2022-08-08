@@ -25,10 +25,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
     match msg.id {
         contract::exec::ADMIN_JOIN_TIME_QUERY_ID => {
-            contract::exec::admin_join_time_reply(msg.result)
+            contract::exec::admin_join_time_reply(deps, msg.result)
         }
         _ => Err(StdError::generic_err("unknown reply id")),
     }
