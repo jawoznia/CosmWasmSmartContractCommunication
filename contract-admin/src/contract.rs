@@ -37,7 +37,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         Greet {} => to_binary(&query::greet()?),
         AdminsList {} => to_binary(&query::admins_list(deps)?),
-        JoinTime { admin } => to_binary(&query::join_time(admin)?),
+        JoinTime { admin } => to_binary(&query::join_time(deps, admin)?),
     }
 }
 
@@ -200,6 +200,8 @@ pub mod exec {
 }
 
 mod query {
+    use cosmwasm_std::Addr;
+
     use super::*;
 
     pub fn greet() -> StdResult<GreetResp> {
@@ -220,8 +222,16 @@ mod query {
         Ok(resp)
     }
 
-    pub fn join_time(_admin: String) -> StdResult<JoinTimeResp> {
-        todo!()
+    pub fn join_time(deps: Deps, addr: Addr) -> StdResult<JoinTimeResp> {
+        let admin = ADMINS
+            .load(deps.storage)?
+            .into_iter()
+            .find(|admin| *admin.addr() == addr)
+            .ok_or_else(|| StdError::generic_err("Admin not found!"))?;
+        let resp = JoinTimeResp {
+            joined: *admin.ts(),
+        };
+        Ok(resp)
     }
 }
 
