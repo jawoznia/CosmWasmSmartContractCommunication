@@ -1,5 +1,5 @@
-use contract_msgs::vote::{AcceptMsg, InstantiateMsg, QueryMsg};
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult};
+use contract_msgs::vote::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 pub mod contract;
 pub mod state;
@@ -15,21 +15,11 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: AcceptMsg) -> StdResult<Response> {
-    contract::exec::execute(deps, env, info, msg)
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
+    contract::execute(deps, env, info, msg)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     contract::query(deps, env, msg)
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
-    match msg.id {
-        contract::exec::ADMIN_JOIN_TIME_QUERY_ID => {
-            contract::exec::admin_join_time_reply(deps, msg.result)
-        }
-        _ => Err(StdError::generic_err("unknown reply id")),
-    }
 }

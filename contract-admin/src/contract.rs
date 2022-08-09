@@ -62,6 +62,7 @@ pub fn execute(
 }
 
 pub mod exec {
+
     use cosmwasm_std::Addr;
     use cosmwasm_std::SubMsg;
     use cosmwasm_std::SubMsgResult;
@@ -183,10 +184,12 @@ pub mod exec {
         let data = resp
             .data
             .ok_or_else(|| StdError::generic_err("No instantiate response data"))?;
-        parse_instantiate_response_data(&data)
+        let resp = parse_instantiate_response_data(&data)
             .map_err(|err| StdError::generic_err(err.to_string()))?;
+        let vote_addr = Addr::unchecked(&resp.contract_address);
 
-        Ok(Response::new())
+        let resp = Response::new().set_data(to_binary(&vote_addr)?);
+        Ok(resp)
     }
 
     fn authenticate_sender(curr_admins: &[Admin], info: MessageInfo) -> Result<(), ContractError> {

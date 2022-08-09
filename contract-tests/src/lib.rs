@@ -1,11 +1,9 @@
 #[cfg(test)]
 mod tests {
-
-    use contract_msgs::vote::{
-        AcceptMsg, InstantiateMsg as VoteInstantiateMsg, QueryMsg, VotesLeftResp,
-    };
-    use cosmwasm_std::{coins, Addr, Empty};
-    use cw_multi_test::{App, Contract, ContractWrapper, Executor};
+    use contract_msgs::admin::{ExecuteMsg, InstantiateMsg as AdminInstantiateMsg};
+    use contract_msgs::vote::{ExecuteMsg as VoteExecuteMsg, QueryMsg, VotesLeftResp};
+    use cosmwasm_std::{coins, from_binary, Addr, Empty};
+    use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
 
     use contract_admin::{
         execute as admin_execute, instantiate as admin_instantiate, query as admin_query,
@@ -13,7 +11,6 @@ mod tests {
     };
     use contract_vote::{
         execute as vote_execute, instantiate as vote_instantiate, query as vote_query,
-        reply as vote_reply,
     };
 
     fn admin() -> Box<dyn Contract<Empty>> {
@@ -23,13 +20,12 @@ mod tests {
     }
 
     fn vote() -> Box<dyn Contract<Empty>> {
-        let contract =
-            ContractWrapper::new(vote_execute, vote_instantiate, vote_query).with_reply(vote_reply);
+        let contract = ContractWrapper::new(vote_execute, vote_instantiate, vote_query);
         Box::new(contract)
     }
 
     #[test]
-    fn blabla() {
+    fn accept_vote() {
         let mut app = App::new(|router, _api, storage| {
             router
                 .bank
@@ -39,20 +35,40 @@ mod tests {
         let admin_code_id = app.store_code(admin());
         let vote_code_id = app.store_code(vote());
 
-        let vote = app
+        let admin = app
             .instantiate_contract(
-                vote_code_id,
-                Addr::unchecked("admin1"),
-                &VoteInstantiateMsg {
-                    proposed_admin: Addr::unchecked("new_admin"),
-                    required: 3,
-                    admin_code_id,
+                admin_code_id,
+                Addr::unchecked("owner"),
+                &AdminInstantiateMsg {
+                    admins: vec![
+                        String::from("owner"),
+                        String::from("admin1"),
+                        String::from("admin2"),
+                        String::from("admin3"),
+                    ],
+                    donation_denom: "eth".to_owned(),
+                    vote_code_id: vote_code_id,
                 },
                 &[],
                 "vote",
                 None,
             )
             .unwrap();
+
+        let resp: AppResponse = app
+            .execute_contract(
+                Addr::unchecked("owner"),
+                admin,
+                &ExecuteMsg::ProposeAdmin {
+                    addr: Addr::unchecked("new_admin"),
+                    required_votes: 3,
+                    admin_code_id,
+                },
+                &[],
+            )
+            .unwrap();
+
+        let vote: Addr = from_binary(&resp.data.unwrap()).unwrap();
 
         let resp: VotesLeftResp = app
             .wrap()
@@ -61,8 +77,13 @@ mod tests {
 
         assert_eq!(resp, VotesLeftResp { votes_left: 3 });
 
-        app.execute_contract(Addr::unchecked("admin1"), vote.clone(), &AcceptMsg {}, &[])
-            .unwrap();
+        app.execute_contract(
+            Addr::unchecked("admin1"),
+            vote.clone(),
+            &VoteExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
 
         let resp: VotesLeftResp = app
             .wrap()
@@ -71,8 +92,13 @@ mod tests {
 
         assert_eq!(resp, VotesLeftResp { votes_left: 2 });
 
-        app.execute_contract(Addr::unchecked("admin1"), vote.clone(), &AcceptMsg {}, &[])
-            .unwrap();
+        app.execute_contract(
+            Addr::unchecked("admin1"),
+            vote.clone(),
+            &VoteExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
 
         let resp: VotesLeftResp = app
             .wrap()
@@ -81,8 +107,13 @@ mod tests {
 
         assert_eq!(resp, VotesLeftResp { votes_left: 2 });
 
-        app.execute_contract(Addr::unchecked("admin2"), vote.clone(), &AcceptMsg {}, &[])
-            .unwrap();
+        app.execute_contract(
+            Addr::unchecked("admin2"),
+            vote.clone(),
+            &VoteExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
 
         let resp: VotesLeftResp = app
             .wrap()
@@ -91,8 +122,13 @@ mod tests {
 
         assert_eq!(resp, VotesLeftResp { votes_left: 1 });
 
-        app.execute_contract(Addr::unchecked("admin3"), vote.clone(), &AcceptMsg {}, &[])
-            .unwrap();
+        app.execute_contract(
+            Addr::unchecked("admin3"),
+            vote.clone(),
+            &VoteExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
 
         let resp: VotesLeftResp = app
             .wrap()
@@ -101,8 +137,13 @@ mod tests {
 
         assert_eq!(resp, VotesLeftResp { votes_left: 0 });
 
-        app.execute_contract(Addr::unchecked("admin3"), vote.clone(), &AcceptMsg {}, &[])
-            .unwrap();
+        app.execute_contract(
+            Addr::unchecked("admin3"),
+            vote.clone(),
+            &VoteExecuteMsg::Accept {},
+            &[],
+        )
+        .unwrap();
 
         let resp: VotesLeftResp = app
             .wrap()
@@ -191,7 +232,7 @@ mod tests {
 
         //     assert_eq!(resp, VotesLeftResp { votes_left: 3 });
 
-        //     app.execute_contract(Addr::unchecked("admin1"), addr.clone(), &AcceptMsg {}, &[])
+        //     app.execute_contract(Addr::unchecked("admin1"), addr.clone(), &VoteExecuteMsg::Accept {}, &[])
         //         .unwrap();
 
         //     let resp: VotesLeftResp = app
@@ -201,7 +242,7 @@ mod tests {
 
         //     assert_eq!(resp, VotesLeftResp { votes_left: 2 });
 
-        //     app.execute_contract(Addr::unchecked("admin1"), addr.clone(), &AcceptMsg {}, &[])
+        //     app.execute_contract(Addr::unchecked("admin1"), addr.clone(), &VoteExecuteMsg::Accept {}, &[])
         //         .unwrap();
 
         //     let resp: VotesLeftResp = app
@@ -211,7 +252,7 @@ mod tests {
 
         //     assert_eq!(resp, VotesLeftResp { votes_left: 2 });
 
-        //     app.execute_contract(Addr::unchecked("admin2"), addr.clone(), &AcceptMsg {}, &[])
+        //     app.execute_contract(Addr::unchecked("admin2"), addr.clone(), &VoteExecuteMsg::Accept {}, &[])
         //         .unwrap();
 
         //     let resp: VotesLeftResp = app
@@ -221,7 +262,7 @@ mod tests {
 
         //     assert_eq!(resp, VotesLeftResp { votes_left: 1 });
 
-        //     app.execute_contract(Addr::unchecked("admin3"), addr.clone(), &AcceptMsg {}, &[])
+        //     app.execute_contract(Addr::unchecked("admin3"), addr.clone(), &VoteExecuteMsg::Accept {}, &[])
         //         .unwrap();
 
         //     let resp: VotesLeftResp = app
@@ -231,7 +272,7 @@ mod tests {
 
         //     assert_eq!(resp, VotesLeftResp { votes_left: 0 });
 
-        //     app.execute_contract(Addr::unchecked("admin3"), addr.clone(), &AcceptMsg {}, &[])
+        //     app.execute_contract(Addr::unchecked("admin3"), addr.clone(), &VoteExecuteMsg::Accept {}, &[])
         //         .unwrap();
 
         //     let resp: VotesLeftResp = app

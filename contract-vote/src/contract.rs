@@ -1,17 +1,17 @@
-use crate::state::{ADMIN_CODE_ID, PROPOSED_ADMIN, REQUIRED_APPROVALS, START_TIME};
-use contract_msgs::vote::{InstantiateMsg, QueryMsg, VotesLeftResp};
+use crate::state::{PROPOSED_ADMIN, REQUIRED_APPROVALS, START_TIME, VOTE_OWNER};
+use contract_msgs::vote::{ExecuteMsg, InstantiateMsg, QueryMsg, VotesLeftResp};
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     REQUIRED_APPROVALS.save(deps.storage, &msg.required)?;
     PROPOSED_ADMIN.save(deps.storage, &msg.proposed_admin)?;
     START_TIME.save(deps.storage, &env.block.time)?;
-    ADMIN_CODE_ID.save(deps.storage, &msg.admin_code_id)?;
+    VOTE_OWNER.save(deps.storage, &info.sender)?;
     Ok(Response::new())
 }
 
@@ -21,6 +21,17 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         VotesLeft {} => to_binary(&query::votes_left(deps)?),
         ProposedAdmin {} => to_binary(&query::proposed_admin(deps)?),
+    }
+}
+
+pub fn execute(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: ExecuteMsg,
+) -> StdResult<Response> {
+    match msg {
+        ExecuteMsg::Accept {} => exec::accept(deps, info),
     }
 }
 
@@ -46,58 +57,29 @@ mod query {
 }
 
 pub mod exec {
-    use cosmwasm_std::{
-        from_binary, to_binary, DepsMut, Empty, Env, MessageInfo, Response, StdError, StdResult,
-        SubMsg, SubMsgResult, WasmMsg,
-    };
 
-    use crate::state::{ADMIN_CODE_ID, ONGOING_VOTE, REQUIRED_APPROVALS, START_TIME, VOTES};
-    use contract_msgs::{admin::JoinTimeResp, vote::AcceptMsg};
+    use cosmwasm_std::{DepsMut, Empty, MessageInfo, Response, StdError, StdResult};
+
+    use crate::state::{ADMINS, REQUIRED_APPROVALS, START_TIME, VOTES, VOTE_OWNER};
 
     pub const ADMIN_JOIN_TIME_QUERY_ID: u64 = 1;
 
-    pub fn execute(
-        deps: DepsMut,
-        _env: Env,
-        info: MessageInfo,
-        _msg: AcceptMsg,
-    ) -> StdResult<Response> {
+    pub fn accept(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
         if VOTES.has(deps.storage, info.sender.clone()) {
             return Ok(Response::new());
         }
-        ONGOING_VOTE.save(deps.storage, &info.sender)?;
 
-        let msg = contract_msgs::admin::QueryMsg::JoinTime {
-            admin: info.sender.clone(),
-        };
+        let admins = ADMINS.query(&deps.querier, VOTE_OWNER.load(deps.storage)?)?;
+        let sender = &info.sender;
 
-        let msg = WasmMsg::Instantiate {
-            admin: None,
-            code_id: ADMIN_CODE_ID.load(deps.storage)?,
-            msg: to_binary(&msg)?,
-            funds: vec![],
-            label: format!("peer-{}", info.sender),
-        };
+        let admin_start_time = *admins
+            .into_iter()
+            .find(|admin| admin.addr() == sender)
+            .ok_or_else(|| StdError::generic_err("Sender admin not found in storage!"))?
+            .ts();
+        let vote_start_time = START_TIME.load(deps.storage)?;
 
-        let resp = Response::new()
-            .add_submessage(SubMsg::reply_on_success(msg, ADMIN_JOIN_TIME_QUERY_ID))
-            .add_attribute("action", "propose_admin")
-            .add_attribute("sender", info.sender);
-
-        Ok(resp)
-    }
-
-    pub fn admin_join_time_reply(deps: DepsMut, msg: SubMsgResult) -> StdResult<Response> {
-        let resp = match msg.into_result() {
-            Ok(resp) => resp,
-            Err(err) => return Err(StdError::generic_err(err)),
-        };
-
-        let resp = resp.data.ok_or_else(|| StdError::generic_err("blabla"))?;
-
-        let resp: JoinTimeResp = from_binary(&resp)?;
-
-        if resp.joined < START_TIME.load(deps.storage)? {
+        if admin_start_time < vote_start_time {
             return Err(StdError::generic_err(
                 "Admin is not allowed to vote due to being approved after vote is created.",
             ))?;
@@ -108,8 +90,7 @@ pub mod exec {
         })?;
 
         let empty_value = Empty {};
-        let sender_addr = ONGOING_VOTE.load(deps.storage)?;
-        VOTES.save(deps.storage, sender_addr, &empty_value)?;
+        VOTES.save(deps.storage, info.sender, &empty_value)?;
 
         Ok(Response::new())
     }
@@ -117,7 +98,7 @@ pub mod exec {
 
 #[cfg(test)]
 mod tests {
-    use crate::contract::exec::execute;
+    use crate::contract::execute;
 
     use contract_msgs::vote::ProposedAdminResp;
     use cosmwasm_std::Addr;

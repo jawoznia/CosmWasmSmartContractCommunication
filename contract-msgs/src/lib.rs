@@ -15,7 +15,9 @@ pub mod vote {
 
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
     #[serde(rename_all = "snake_case")]
-    pub struct AcceptMsg {}
+    pub enum ExecuteMsg {
+        Accept {},
+    }
 
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
     #[serde(rename_all = "snake_case")]
@@ -92,5 +94,11 @@ pub mod admin {
     #[serde(rename_all = "snake_case")]
     pub struct JoinTimeResp {
         pub joined: Timestamp,
+    }
+
+    #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
+    #[serde(rename_all = "snake_case")]
+    pub struct ProposeAdminResp {
+        pub vote_addr: Addr,
     }
 }
