@@ -58,7 +58,10 @@ mod query {
 
 pub mod exec {
 
-    use cosmwasm_std::{DepsMut, Empty, MessageInfo, Response, StdError, StdResult};
+    use cosmwasm_std::{
+        to_binary, DepsMut, Empty, MessageInfo, Response, StdError, StdResult, SubMsg, WasmMsg,
+    };
+    use msgs::admin::ExecuteMsg;
 
     use crate::state::{ADMINS, REQUIRED_VOTES, START_TIME, VOTES, VOTE_OWNER};
 
@@ -89,10 +92,23 @@ pub mod exec {
             Ok(votes_left - 1)
         })?;
 
-        let empty_value = Empty {};
-        VOTES.save(deps.storage, info.sender, &empty_value)?;
+        VOTES.save(deps.storage, info.sender, &Empty {})?;
 
-        Ok(Response::new())
+        if REQUIRED_VOTES.load(deps.storage)? > 0 {
+            return Ok(Response::new());
+        }
+
+        let msg = WasmMsg::Execute {
+            contract_addr: VOTE_OWNER.load(deps.storage)?.into_string(),
+            msg: to_binary(&ExecuteMsg::AddMember {})?,
+            funds: vec![],
+        };
+
+        let resp = Response::new()
+            .add_submessage(SubMsg::new(msg))
+            .add_attribute("action", "add_admin");
+
+        Ok(resp)
     }
 }
 

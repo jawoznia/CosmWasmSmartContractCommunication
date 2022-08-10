@@ -65,7 +65,7 @@ pub mod exec {
     use cosmwasm_std::SubMsgResult;
     use cw_utils::parse_instantiate_response_data;
 
-    use crate::state::PROPOSED_ADMIN;
+    use crate::state::{vote::VOTE_OWNER, PROPOSED_ADMIN};
 
     use super::*;
     use cosmwasm_std::WasmMsg;
@@ -76,19 +76,23 @@ pub mod exec {
         info: MessageInfo,
     ) -> Result<Response, ContractError> {
         let mut curr_admins = ADMINS.load(deps.storage)?;
-        authenticate_sender(&curr_admins, info)?;
+        let vote_owner = VOTE_OWNER.query(&deps.querier, info.sender.clone())?;
 
-        let new_admin = PROPOSED_ADMIN.query(&deps.querier, PROPOSED_ADMIN.load(deps.storage)?)?;
+        if &env.contract.address != &vote_owner {
+            return Err(ContractError::Unauthorized { sender: vote_owner });
+        }
+
+        let proposed_admin = PROPOSED_ADMIN.query(&deps.querier, info.sender)?;
 
         if curr_admins
             .iter()
             .map(|admin| admin.addr().as_str())
-            .any(|x| x == new_admin.as_str())
+            .any(|x| x == proposed_admin.as_str())
         {
             return Ok(Response::new());
         }
 
-        curr_admins.push(Admin::new(new_admin, env.block.time));
+        curr_admins.push(Admin::new(proposed_admin, env.block.time));
         ADMINS.save(deps.storage, &curr_admins)?;
 
         Ok(Response::new())
@@ -112,7 +116,7 @@ pub mod exec {
             code_id: VOTE_CODE_ID.load(deps.storage)?,
             msg: to_binary(&msg)?,
             funds: vec![],
-            label: format!("peer-{}", info.sender),
+            label: format!("admin-{}", info.sender),
         };
 
         let resp = Response::new()
@@ -174,18 +178,6 @@ pub mod exec {
 
         let resp = Response::new().set_data(to_binary(&vote_addr)?);
         Ok(resp)
-    }
-
-    fn authenticate_sender(curr_admins: &[Admin], info: MessageInfo) -> Result<(), ContractError> {
-        match curr_admins
-            .iter()
-            .find(|admin| admin.addr() == &info.sender)
-        {
-            Some(_) => Ok(()),
-            None => Err(ContractError::Unauthorized {
-                sender: info.sender,
-            }),
-        }
     }
 }
 
@@ -325,118 +317,6 @@ mod tests {
             GreetResp {
                 message: "Hello World".to_owned()
             }
-        );
-    }
-
-    #[test]
-    fn unauthorized() {
-        let mut app = App::new(|router, _api, storage| {
-            router
-                .bank
-                .init_balance(storage, &Addr::unchecked("admin1"), coins(100, "utgd"))
-                .unwrap();
-        });
-        let code = ContractWrapper::new(execute, instantiate, query);
-        let code_id = app.store_code(Box::new(code));
-        let dummy_vote_code_id = 1;
-
-        let admin = app
-            .instantiate_contract(
-                code_id,
-                Addr::unchecked("owner"),
-                &InstantiateMsg {
-                    admins: vec![String::from("owner")],
-                    donation_denom: "eth".to_owned(),
-                    vote_code_id: dummy_vote_code_id,
-                },
-                &[],
-                "vote",
-                None,
-            )
-            .unwrap();
-
-        let err = app
-            .execute_contract(
-                Addr::unchecked("user"),
-                admin,
-                &ExecuteMsg::AddMember {},
-                &[],
-            )
-            .unwrap_err();
-
-        assert_eq!(
-            ContractError::Unauthorized {
-                sender: Addr::unchecked("user")
-            },
-            err.downcast().unwrap()
-        );
-    }
-
-    #[test]
-    #[ignore]
-    fn add_members() {
-        let mut app = App::default();
-
-        let code = ContractWrapper::new(execute, instantiate, query);
-        let code_id = app.store_code(Box::new(code));
-
-        let addr = app
-            .instantiate_contract(
-                code_id,
-                Addr::unchecked("owner"),
-                &InstantiateMsg {
-                    admins: vec!["owner".to_owned()],
-                    donation_denom: "eth".to_owned(),
-                    vote_code_id: VOTE_INSTANTIATE_ID,
-                },
-                &[],
-                "Contract",
-                None,
-            )
-            .unwrap();
-
-        let resp = app
-            .execute_contract(
-                Addr::unchecked("owner"),
-                addr,
-                &ExecuteMsg::AddMember {},
-                &[],
-            )
-            .unwrap();
-
-        let wasm = resp.events.iter().find(|ev| ev.ty == "wasm").unwrap();
-        assert_eq!(
-            wasm.attributes
-                .iter()
-                .find(|attr| attr.key == "action")
-                .unwrap()
-                .value,
-            "add_members"
-        );
-        assert_eq!(
-            wasm.attributes
-                .iter()
-                .find(|attr| attr.key == "added_count")
-                .unwrap()
-                .value,
-            "1"
-        );
-
-        let admin_added: Vec<_> = resp
-            .events
-            .iter()
-            .filter(|ev| ev.ty == "wasm-admin_added")
-            .collect();
-        assert_eq!(admin_added.len(), 1);
-
-        assert_eq!(
-            admin_added[0]
-                .attributes
-                .iter()
-                .find(|attr| attr.key == "addr")
-                .unwrap()
-                .value,
-            "user"
         );
     }
 
