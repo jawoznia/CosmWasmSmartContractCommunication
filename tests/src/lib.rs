@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
 
-    use cosmwasm_std::{coins, from_binary, Addr, BlockInfo, Empty, StdError};
+    use cosmwasm_std::{coins, from_binary, Addr, Empty, StdError};
     use cw_multi_test::{next_block, App, AppResponse, Contract, ContractWrapper, Executor};
     use msgs::admin::{
         AdminsListResp, ExecuteMsg as AdminExecuteMsg, InstantiateMsg as AdminInstantiateMsg,
@@ -54,7 +54,7 @@ mod tests {
                         String::from("admin3"),
                     ],
                     donation_denom: "eth".to_owned(),
-                    vote_code_id: vote_code_id,
+                    vote_code_id,
                 },
                 &[],
                 "vote",
@@ -154,7 +154,7 @@ mod tests {
 
         let resp: VotesLeftResp = app
             .wrap()
-            .query_wasm_smart(vote.clone(), &VoteQueryMsg::VotesLeft {})
+            .query_wasm_smart(vote, &VoteQueryMsg::VotesLeft {})
             .unwrap();
 
         assert_eq!(resp, VotesLeftResp { votes_left: 0 });
@@ -178,7 +178,7 @@ mod tests {
                 &AdminInstantiateMsg {
                     admins: vec![String::from("owner"), String::from("admin1")],
                     donation_denom: "eth".to_owned(),
-                    vote_code_id: vote_code_id,
+                    vote_code_id,
                 },
                 &[],
                 "vote",
@@ -220,7 +220,7 @@ mod tests {
 
         let resp: AdminsListResp = app
             .wrap()
-            .query_wasm_smart(admin.clone(), &AdminQueryMsg::AdminsList {})
+            .query_wasm_smart(admin, &AdminQueryMsg::AdminsList {})
             .unwrap();
 
         assert_eq!(resp.admins.len(), 2);
@@ -244,7 +244,7 @@ mod tests {
                 &AdminInstantiateMsg {
                     admins: vec![String::from("owner"), String::from("admin1")], // change to to_owned
                     donation_denom: "eth".to_owned(),
-                    vote_code_id: vote_code_id,
+                    vote_code_id,
                 },
                 &[],
                 "vote",
@@ -276,7 +276,7 @@ mod tests {
 
         app.execute_contract(
             Addr::unchecked("admin1"),
-            vote.clone(),
+            vote,
             &VoteExecuteMsg::Accept {},
             &[],
         )
@@ -284,7 +284,7 @@ mod tests {
 
         let resp: AdminsListResp = app
             .wrap()
-            .query_wasm_smart(admin.clone(), &AdminQueryMsg::AdminsList {})
+            .query_wasm_smart(admin, &AdminQueryMsg::AdminsList {})
             .unwrap();
 
         assert_eq!(resp.admins.len(), 3);
@@ -313,7 +313,7 @@ mod tests {
                         "admin3".to_owned(),
                     ],
                     donation_denom: "eth".to_owned(),
-                    vote_code_id: vote_code_id,
+                    vote_code_id,
                 },
                 &[],
                 "vote",
@@ -398,7 +398,7 @@ mod tests {
 
         app.execute_contract(
             Addr::unchecked("admin3"),
-            vote.clone(),
+            vote,
             &VoteExecuteMsg::Accept {},
             &[],
         )
@@ -406,7 +406,7 @@ mod tests {
 
         let resp: AdminsListResp = app
             .wrap()
-            .query_wasm_smart(admin.clone(), &AdminQueryMsg::AdminsList {})
+            .query_wasm_smart(admin, &AdminQueryMsg::AdminsList {})
             .unwrap();
 
         assert_eq!(resp.admins.len(), 5);
@@ -430,7 +430,7 @@ mod tests {
                 &AdminInstantiateMsg {
                     admins: vec![String::from("owner"), String::from("admin1")],
                     donation_denom: "eth".to_owned(),
-                    vote_code_id: vote_code_id,
+                    vote_code_id,
                 },
                 &[],
                 "vote",
@@ -517,7 +517,7 @@ mod tests {
 
         app.execute_contract(
             Addr::unchecked("admin1"),
-            vote_admin_3.clone(),
+            vote_admin_3,
             &VoteExecuteMsg::Accept {},
             &[],
         )
@@ -525,7 +525,7 @@ mod tests {
 
         let resp: AdminsListResp = app
             .wrap()
-            .query_wasm_smart(admin.clone(), &AdminQueryMsg::AdminsList {})
+            .query_wasm_smart(admin, &AdminQueryMsg::AdminsList {})
             .unwrap();
 
         assert_eq!(resp.admins.len(), 4);

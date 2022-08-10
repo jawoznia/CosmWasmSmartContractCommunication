@@ -1,9 +1,10 @@
 use crate::error::ContractError;
-use crate::state::{Admin, ADMINS, DONATION_DENOM, VOTE_CODE_ID};
+use crate::state::{ADMINS, DONATION_DENOM, VOTE_CODE_ID};
 use cosmwasm_std::{
-    coins, to_binary, BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    coins, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
     StdResult,
 };
+
 use msgs::admin::{AdminsListResp, ExecuteMsg, InstantiateMsg, JoinTimeResp, QueryMsg};
 use msgs::vote::InstantiateMsg as VoteInstantiate;
 
@@ -15,14 +16,13 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    let admins: StdResult<Vec<Admin>> = msg
-        .admins
-        .into_iter()
-        .map(|addr| -> StdResult<Admin> {
-            Ok(Admin::new(deps.api.addr_validate(&addr)?, env.block.time))
-        })
-        .collect();
-    ADMINS.save(deps.storage, &admins?)?;
+    for addr in msg.admins.into_iter() {
+        ADMINS.save(
+            deps.storage,
+            deps.api.addr_validate(&addr)?,
+            &env.block.time,
+        )?;
+    }
     DONATION_DENOM.save(deps.storage, &msg.donation_denom)?;
     VOTE_CODE_ID.save(deps.storage, &msg.vote_code_id)?;
 
@@ -75,22 +75,16 @@ pub mod exec {
         env: Env,
         info: MessageInfo,
     ) -> Result<Response, ContractError> {
-        let mut curr_admins = ADMINS.load(deps.storage)?;
-
         let proposed_admin = PENDING_VOTES.load(deps.storage, info.sender)?;
+        let resp = Response::new().add_attribute("action", "add_member");
 
-        if curr_admins
-            .iter()
-            .map(|admin| admin.addr().as_str())
-            .any(|x| x == proposed_admin.as_str())
-        {
-            return Ok(Response::new());
+        if ADMINS.has(deps.storage, proposed_admin.clone()) {
+            return Ok(resp.add_attribute("status", "User already added."));
         }
 
-        curr_admins.push(Admin::new(proposed_admin, env.block.time));
-        ADMINS.save(deps.storage, &curr_admins)?;
+        ADMINS.save(deps.storage, proposed_admin.clone(), &env.block.time)?;
 
-        Ok(Response::new())
+        Ok(resp.add_attribute("status", format!("Success adding {}.", proposed_admin)))
     }
 
     pub fn propose_admin(
@@ -123,29 +117,29 @@ pub mod exec {
     }
 
     pub fn leave(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
-        ADMINS.update(deps.storage, move |admins| -> StdResult<_> {
-            let admins = admins
-                .into_iter()
-                .filter(|admin| *admin.addr() != info.sender)
-                .collect();
-            Ok(admins)
-        })?;
+        ADMINS.remove(deps.storage, info.sender);
 
-        Ok(Response::new())
+        Ok(Response::new().add_attribute("action", "Leave"))
     }
 
     pub fn donate(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
         let denom = DONATION_DENOM.load(deps.storage)?;
-        let admins = ADMINS.load(deps.storage)?;
+        let admins = ADMINS
+            .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+            .filter_map(|admin| admin.ok());
 
         let donation = cw_utils::must_pay(&info, &denom)
             .map_err(|err| StdError::generic_err(err.to_string()))?
             .u128();
 
-        let donation_per_admin = donation / (admins.len() as u128);
+        let donation_per_admin = donation / (admins.count() as u128);
+
+        let admins = ADMINS
+            .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+            .filter_map(|admin| admin.ok());
 
         let messages = admins.into_iter().map(|admin| BankMsg::Send {
-            to_address: admin.addr().to_string(),
+            to_address: admin.to_string(),
             amount: coins(donation_per_admin, &denom),
         });
 
@@ -183,25 +177,18 @@ mod query {
     use super::*;
 
     pub fn admins_list(deps: Deps) -> StdResult<AdminsListResp> {
-        let admins = ADMINS
-            .load(deps.storage)?
-            .into_iter()
-            .map(|admin| admin.addr().clone())
+        let admins: Vec<Addr> = ADMINS
+            .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+            .filter_map(|admin| admin.ok())
+            .map(|(addr, _)| addr)
             .collect();
         let resp = AdminsListResp { admins };
         Ok(resp)
     }
 
     pub fn join_time(deps: Deps, addr: String) -> StdResult<JoinTimeResp> {
-        let admin = ADMINS
-            .load(deps.storage)?
-            .into_iter()
-            .find(|admin| *admin.addr() == addr)
-            .ok_or_else(|| StdError::generic_err("Admin not found!"))?;
-        let resp = JoinTimeResp {
-            joined: *admin.ts(),
-        };
-        Ok(resp)
+        let ts = ADMINS.load(deps.storage, deps.api.addr_validate(&addr)?)?;
+        Ok(JoinTimeResp { joined: ts })
     }
 }
 
@@ -365,7 +352,7 @@ mod tests {
                 &InstantiateMsg {
                     admins: vec![],
                     donation_denom: "eth".to_owned(),
-                    vote_code_id: vote_code_id,
+                    vote_code_id,
                 },
                 &[],
                 "Contract",
@@ -382,7 +369,7 @@ mod tests {
 
         app.execute_contract(
             Addr::unchecked("owner"),
-            addr.clone(),
+            addr,
             &ExecuteMsg::ProposeAdmin {
                 addr: String::from("proposed_admin"),
                 required_votes: 2,

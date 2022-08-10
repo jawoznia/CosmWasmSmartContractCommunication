@@ -65,7 +65,7 @@ pub mod exec {
     };
     use msgs::admin::ExecuteMsg;
 
-    use crate::state::{ADMINS, REQUIRED_VOTES, START_TIME, VOTES, VOTE_OWNER};
+    use crate::state::{admin::ADMINS, REQUIRED_VOTES, START_TIME, VOTES, VOTE_OWNER};
 
     pub const ADMIN_JOIN_TIME_QUERY_ID: u64 = 1;
 
@@ -74,23 +74,21 @@ pub mod exec {
             return Ok(Response::new());
         }
 
-        let admins = ADMINS.query(&deps.querier, VOTE_OWNER.load(deps.storage)?)?;
-        let sender = &info.sender;
+        let admin_start_time = match ADMINS.query(
+            &deps.querier,
+            VOTE_OWNER.load(deps.storage)?,
+            info.sender.clone(),
+        )? {
+            Some(v) => v,
+            None => return Err(StdError::generic_err("Non admin accept!.")),
+        };
 
-        let admin_start_time = *admins
-            .into_iter()
-            .find(|admin| admin.addr() == sender)
-            .ok_or_else(|| StdError::generic_err("Sender admin not found in storage!"))?
-            .ts();
         let vote_start_time = START_TIME.load(deps.storage)?;
 
-        match admin_start_time.cmp(&vote_start_time) {
-            Ordering::Greater => {
-                return Err(StdError::generic_err(
-                    "Admin is not allowed to vote due to being approved after vote is created.",
-                ))?
-            }
-            _ => (),
+        if admin_start_time.cmp(&vote_start_time) == Ordering::Greater {
+            return Err(StdError::generic_err(
+                "Admin is not allowed to vote due to being approved after vote is created.",
+            ))?;
         }
 
         REQUIRED_VOTES.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
