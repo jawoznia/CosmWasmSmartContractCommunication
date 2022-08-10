@@ -1,6 +1,6 @@
 use crate::state::{PROPOSED_ADMIN, REQUIRED_APPROVALS, START_TIME, VOTE_OWNER};
-use contract_msgs::vote::{ExecuteMsg, InstantiateMsg, QueryMsg, VotesLeftResp};
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use msgs::vote::{ExecuteMsg, InstantiateMsg, QueryMsg, VotesLeftResp};
 
 pub fn instantiate(
     deps: DepsMut,
@@ -37,7 +37,7 @@ pub fn execute(
 
 mod query {
     use crate::state::PROPOSED_ADMIN;
-    use contract_msgs::vote::ProposedAdminResp;
+    use msgs::vote::ProposedAdminResp;
 
     use super::*;
 
@@ -100,9 +100,9 @@ pub mod exec {
 mod tests {
     use crate::contract::execute;
 
-    use contract_msgs::vote::ProposedAdminResp;
     use cosmwasm_std::Addr;
     use cw_multi_test::{App, ContractWrapper, Executor};
+    use msgs::vote::ProposedAdminResp;
 
     use super::*;
 

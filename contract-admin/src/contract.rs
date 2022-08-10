@@ -1,13 +1,11 @@
 use crate::error::ContractError;
 use crate::state::{Admin, ADMINS, DONATION_DENOM, VOTE_CODE_ID};
-use contract_msgs::admin::{
-    AdminsListResp, ExecuteMsg, GreetResp, InstantiateMsg, JoinTimeResp, QueryMsg,
-};
-use contract_msgs::vote::InstantiateMsg as VoteInstantiate;
 use cosmwasm_std::{
     coins, to_binary, BankMsg, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdError,
     StdResult,
 };
+use msgs::admin::{AdminsListResp, ExecuteMsg, GreetResp, InstantiateMsg, JoinTimeResp, QueryMsg};
+use msgs::vote::InstantiateMsg as VoteInstantiate;
 
 pub const VOTE_INSTANTIATE_ID: u64 = 1;
 

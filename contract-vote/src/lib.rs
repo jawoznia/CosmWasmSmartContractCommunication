@@ -1,5 +1,5 @@
-use contract_msgs::vote::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use msgs::vote::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 pub mod contract;
 pub mod state;

@@ -17,7 +17,7 @@ thiserror = "1"
 schemars = "0.8.1"
 cw-utils = "0.14.0"
 derive-getters = "0.2"
-contract-msgs = {version = "0.1.0", features = ["library"], path = "../contract-msgs"}
+msgs = {version = "0.1.0", features = ["library"], path = "../msgs"}
 
 [dev-dependencies]
 cw-multi-test = "0.14.0"

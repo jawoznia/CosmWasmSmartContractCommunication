@@ -1,6 +1,6 @@
-use contract_msgs::admin::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult};
 use error::ContractError;
+use msgs::admin::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 pub mod contract;
 pub mod error;

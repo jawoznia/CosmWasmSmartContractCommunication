@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use contract_msgs::admin::{ExecuteMsg, InstantiateMsg as AdminInstantiateMsg};
-    use contract_msgs::vote::{ExecuteMsg as VoteExecuteMsg, QueryMsg, VotesLeftResp};
     use cosmwasm_std::{coins, from_binary, Addr, Empty};
     use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
+    use msgs::admin::{ExecuteMsg, InstantiateMsg as AdminInstantiateMsg};
+    use msgs::vote::{ExecuteMsg as VoteExecuteMsg, QueryMsg, VotesLeftResp};
 
     use contract_admin::{
         execute as admin_execute, instantiate as admin_instantiate, query as admin_query,
