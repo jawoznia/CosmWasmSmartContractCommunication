@@ -1,4 +1,4 @@
-use crate::state::{PROPOSED_ADMIN, REQUIRED_APPROVALS, START_TIME, VOTE_OWNER};
+use crate::state::{PROPOSED_ADMIN, REQUIRED_VOTES, START_TIME, VOTE_OWNER};
 use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use msgs::vote::{ExecuteMsg, InstantiateMsg, QueryMsg, VotesLeftResp};
 
@@ -8,7 +8,7 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    REQUIRED_APPROVALS.save(deps.storage, &msg.required)?;
+    REQUIRED_VOTES.save(deps.storage, &msg.required_votes)?;
     PROPOSED_ADMIN.save(deps.storage, &deps.api.addr_validate(&msg.proposed_admin)?)?;
     START_TIME.save(deps.storage, &env.block.time)?;
     VOTE_OWNER.save(deps.storage, &info.sender)?;
@@ -43,7 +43,7 @@ mod query {
 
     pub fn votes_left(deps: Deps) -> StdResult<VotesLeftResp> {
         let resp = VotesLeftResp {
-            votes_left: REQUIRED_APPROVALS.load(deps.storage)?,
+            votes_left: REQUIRED_VOTES.load(deps.storage)?,
         };
         Ok(resp)
     }
@@ -60,7 +60,7 @@ pub mod exec {
 
     use cosmwasm_std::{DepsMut, Empty, MessageInfo, Response, StdError, StdResult};
 
-    use crate::state::{ADMINS, REQUIRED_APPROVALS, START_TIME, VOTES, VOTE_OWNER};
+    use crate::state::{ADMINS, REQUIRED_VOTES, START_TIME, VOTES, VOTE_OWNER};
 
     pub const ADMIN_JOIN_TIME_QUERY_ID: u64 = 1;
 
@@ -85,7 +85,7 @@ pub mod exec {
             ))?;
         }
 
-        REQUIRED_APPROVALS.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
+        REQUIRED_VOTES.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
             Ok(votes_left - 1)
         })?;
 
@@ -119,7 +119,7 @@ mod tests {
                 Addr::unchecked("owner"),
                 &InstantiateMsg {
                     proposed_admin: String::from("proposed_admin"),
-                    required: 3,
+                    required_votes: 3,
                     admin_code_id: code_id,
                 },
                 &[],

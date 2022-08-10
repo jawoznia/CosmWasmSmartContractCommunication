@@ -116,7 +116,7 @@ pub mod exec {
         admin_code_id: u64,
     ) -> Result<Response, ContractError> {
         let msg = VoteInstantiate {
-            required: required_votes,
+            required_votes,
             proposed_admin: addr,
             admin_code_id,
         };

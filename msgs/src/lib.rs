@@ -8,7 +8,7 @@ pub mod vote {
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
     #[serde(rename_all = "snake_case")]
     pub struct InstantiateMsg {
-        pub required: u32,
+        pub required_votes: u32,
         pub proposed_admin: String,
         pub admin_code_id: u64,
     }
