@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    
     use cosmwasm_std::{coins, from_binary, Addr, Empty};
     use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
     use msgs::admin::{ExecuteMsg, InstantiateMsg as AdminInstantiateMsg};

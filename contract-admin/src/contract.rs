@@ -329,24 +329,28 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn unauthorized() {
-        let mut app = App::default();
-
+        let mut app = App::new(|router, _api, storage| {
+            router
+                .bank
+                .init_balance(storage, &Addr::unchecked("admin1"), coins(100, "utgd"))
+                .unwrap();
+        });
         let code = ContractWrapper::new(execute, instantiate, query);
         let code_id = app.store_code(Box::new(code));
+        let dummy_vote_code_id = 1;
 
-        let addr = app
+        let admin = app
             .instantiate_contract(
                 code_id,
                 Addr::unchecked("owner"),
                 &InstantiateMsg {
-                    admins: vec![],
+                    admins: vec![String::from("owner")],
                     donation_denom: "eth".to_owned(),
-                    vote_code_id: VOTE_INSTANTIATE_ID,
+                    vote_code_id: dummy_vote_code_id,
                 },
                 &[],
-                "Contract",
+                "vote",
                 None,
             )
             .unwrap();
@@ -354,7 +358,7 @@ mod tests {
         let err = app
             .execute_contract(
                 Addr::unchecked("user"),
-                addr,
+                admin,
                 &ExecuteMsg::AddMember {},
                 &[],
             )
