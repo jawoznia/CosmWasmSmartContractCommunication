@@ -4,7 +4,7 @@ use cosmwasm_std::{
     coins, to_binary, BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
     StdResult,
 };
-use msgs::admin::{AdminsListResp, ExecuteMsg, GreetResp, InstantiateMsg, JoinTimeResp, QueryMsg};
+use msgs::admin::{AdminsListResp, ExecuteMsg, InstantiateMsg, JoinTimeResp, QueryMsg};
 use msgs::vote::InstantiateMsg as VoteInstantiate;
 
 pub const VOTE_INSTANTIATE_ID: u64 = 1;
@@ -33,7 +33,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use QueryMsg::*;
 
     match msg {
-        Greet {} => to_binary(&query::greet()?),
         AdminsList {} => to_binary(&query::admins_list(deps)?),
         JoinTime { admin } => to_binary(&query::join_time(deps, admin)?),
     }
@@ -185,14 +184,6 @@ pub mod exec {
 mod query {
     use super::*;
 
-    pub fn greet() -> StdResult<GreetResp> {
-        let resp = GreetResp {
-            message: "Hello World".to_owned(),
-        };
-
-        Ok(resp)
-    }
-
     pub fn admins_list(deps: Deps) -> StdResult<AdminsListResp> {
         let admins = ADMINS
             .load(deps.storage)?
@@ -282,41 +273,6 @@ mod tests {
             resp,
             AdminsListResp {
                 admins: vec![Addr::unchecked("admin1"), Addr::unchecked("admin2")],
-            }
-        );
-    }
-
-    #[test]
-    fn greet_query() {
-        let mut app = App::default();
-
-        let code = ContractWrapper::new(execute, instantiate, query);
-        let code_id = app.store_code(Box::new(code));
-
-        let addr = app
-            .instantiate_contract(
-                code_id,
-                Addr::unchecked("owner"),
-                &InstantiateMsg {
-                    admins: vec![],
-                    donation_denom: "eth".to_owned(),
-                    vote_code_id: VOTE_INSTANTIATE_ID,
-                },
-                &[],
-                "Contract",
-                None,
-            )
-            .unwrap();
-
-        let resp: GreetResp = app
-            .wrap()
-            .query_wasm_smart(addr, &QueryMsg::Greet {})
-            .unwrap();
-
-        assert_eq!(
-            resp,
-            GreetResp {
-                message: "Hello World".to_owned()
             }
         );
     }
