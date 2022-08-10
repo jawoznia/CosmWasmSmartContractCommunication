@@ -70,18 +70,6 @@ pub mod admin {
 
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
     #[serde(rename_all = "snake_case")]
-    pub struct GreetResp {
-        pub message: String,
-    }
-
-    #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
-    #[serde(rename_all = "snake_case")]
-    pub struct AdminsListResp {
-        pub admins: Vec<Addr>,
-    }
-
-    #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
-    #[serde(rename_all = "snake_case")]
     pub enum QueryMsg {
         Greet {},
         AdminsList {},
@@ -98,5 +86,17 @@ pub mod admin {
     #[serde(rename_all = "snake_case")]
     pub struct ProposeAdminResp {
         pub vote_addr: Addr,
+    }
+
+    #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
+    #[serde(rename_all = "snake_case")]
+    pub struct GreetResp {
+        pub message: String,
+    }
+
+    #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
+    #[serde(rename_all = "snake_case")]
+    pub struct AdminsListResp {
+        pub admins: Vec<Addr>,
     }
 }
