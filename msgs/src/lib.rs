@@ -55,9 +55,7 @@ pub mod admin {
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
     #[serde(rename_all = "snake_case")]
     pub enum ExecuteMsg {
-        AddMembers {
-            admins: Vec<String>,
-        },
+        AddMember {},
         ProposeAdmin {
             addr: String,
             required_votes: u32,
