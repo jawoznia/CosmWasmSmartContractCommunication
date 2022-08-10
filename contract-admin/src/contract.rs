@@ -64,9 +64,8 @@ pub mod exec {
     use cosmwasm_std::SubMsgResult;
     use cw_utils::parse_instantiate_response_data;
 
-    use crate::state::vote;
+    use crate::state::vote::PROPOSED_ADMIN;
     use crate::state::PENDING_VOTES;
-    use crate::state::{vote::PROPOSED_ADMIN, vote::VOTE_OWNER};
 
     use super::*;
     use cosmwasm_std::WasmMsg;
@@ -77,14 +76,8 @@ pub mod exec {
         info: MessageInfo,
     ) -> Result<Response, ContractError> {
         let mut curr_admins = ADMINS.load(deps.storage)?;
-        let vote_owner = VOTE_OWNER.query(&deps.querier, info.sender.clone())?;
 
-        // TODO: Change to look into PENDING_VOTES
-        if env.contract.address != vote_owner {
-            return Err(ContractError::Unauthorized { sender: vote_owner });
-        }
-
-        let proposed_admin = PROPOSED_ADMIN.query(&deps.querier, info.sender)?;
+        let proposed_admin = PENDING_VOTES.load(deps.storage, info.sender)?;
 
         if curr_admins
             .iter()
