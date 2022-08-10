@@ -64,7 +64,9 @@ pub mod exec {
     use cosmwasm_std::SubMsgResult;
     use cw_utils::parse_instantiate_response_data;
 
-    use crate::state::{vote::VOTE_OWNER, PROPOSED_ADMIN};
+    use crate::state::vote;
+    use crate::state::PENDING_VOTES;
+    use crate::state::{vote::PROPOSED_ADMIN, vote::VOTE_OWNER};
 
     use super::*;
     use cosmwasm_std::WasmMsg;
@@ -163,7 +165,7 @@ pub mod exec {
         Ok(resp)
     }
 
-    pub fn vote_instantiate_reply(msg: SubMsgResult) -> StdResult<Response> {
+    pub fn vote_instantiate_reply(deps: DepsMut, msg: SubMsgResult) -> StdResult<Response> {
         let resp = match msg.into_result() {
             Ok(resp) => resp,
             Err(err) => return Err(StdError::generic_err(err)),
@@ -175,6 +177,9 @@ pub mod exec {
         let resp = parse_instantiate_response_data(&data)
             .map_err(|err| StdError::generic_err(err.to_string()))?;
         let vote_addr = Addr::unchecked(&resp.contract_address);
+
+        let proposed_admin = PROPOSED_ADMIN.query(&deps.querier, vote_addr.clone())?;
+        PENDING_VOTES.save(deps.storage, vote_addr.clone(), &proposed_admin)?;
 
         let resp = Response::new().set_data(to_binary(&vote_addr)?);
         Ok(resp)

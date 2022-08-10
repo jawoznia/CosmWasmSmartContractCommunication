@@ -1,6 +1,4 @@
-use cosmwasm_std::{
-    Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
-};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult};
 use error::ContractError;
 use msgs::admin::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -34,9 +32,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(_deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
+pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
     match msg.id {
-        contract::VOTE_INSTANTIATE_ID => contract::exec::vote_instantiate_reply(msg.result),
+        contract::VOTE_INSTANTIATE_ID => contract::exec::vote_instantiate_reply(deps, msg.result),
         _ => Err(StdError::generic_err("unknown reply id")),
     }
 }
