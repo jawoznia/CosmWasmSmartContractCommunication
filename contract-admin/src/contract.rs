@@ -63,6 +63,7 @@ pub mod exec {
     use cosmwasm_std::SubMsg;
     use cosmwasm_std::SubMsgResult;
     use cw_utils::parse_instantiate_response_data;
+    use msgs::admin::ProposeAdminResp;
 
     use crate::state::vote::PROPOSED_ADMIN;
     use crate::state::PENDING_VOTES;
@@ -168,7 +169,7 @@ pub mod exec {
         let proposed_admin = PROPOSED_ADMIN.query(&deps.querier, vote_addr.clone())?;
         PENDING_VOTES.save(deps.storage, vote_addr.clone(), &proposed_admin)?;
 
-        let resp = Response::new().set_data(to_binary(&vote_addr)?);
+        let resp = Response::new().set_data(to_binary(&ProposeAdminResp { vote_addr })?);
         Ok(resp)
     }
 }

@@ -86,4 +86,10 @@ pub mod admin {
     pub struct AdminsListResp {
         pub admins: Vec<Addr>,
     }
+
+    #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
+    #[serde(rename_all = "snake_case")]
+    pub struct ProposeAdminResp {
+        pub vote_addr: Addr,
+    }
 }
