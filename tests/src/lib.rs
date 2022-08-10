@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
 
-    use cosmwasm_std::{coins, from_binary, Addr, BlockInfo, Empty};
-    use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
+    use cosmwasm_std::{coins, from_binary, Addr, BlockInfo, Empty, StdError};
+    use cw_multi_test::{next_block, App, AppResponse, Contract, ContractWrapper, Executor};
     use msgs::admin::{
         AdminsListResp, ExecuteMsg as AdminExecuteMsg, InstantiateMsg as AdminInstantiateMsg,
         QueryMsg as AdminQueryMsg,
@@ -413,8 +413,6 @@ mod tests {
     }
 
     #[test]
-    // Ignored because
-    #[ignore]
     fn accepting_vote_older_than_admin() {
         let mut app = App::new(|router, _api, storage| {
             router
@@ -477,10 +475,7 @@ mod tests {
 
         assert_eq!(resp.admins.len(), 2);
 
-        app.update_block(|bi: &mut BlockInfo| {
-            bi.time.plus_seconds(5);
-            bi.height.checked_add(5).unwrap();
-        });
+        app.update_block(next_block);
 
         app.execute_contract(
             Addr::unchecked("admin1"),
@@ -497,13 +492,21 @@ mod tests {
 
         assert_eq!(resp.admins.len(), 3);
 
-        app.execute_contract(
-            Addr::unchecked("admin2"),
-            vote_admin_3.clone(),
-            &VoteExecuteMsg::Accept {},
-            &[],
-        )
-        .unwrap();
+        let err = app
+            .execute_contract(
+                Addr::unchecked("admin2"),
+                vote_admin_3.clone(),
+                &VoteExecuteMsg::Accept {},
+                &[],
+            )
+            .unwrap_err();
+
+        assert_eq!(
+            StdError::generic_err(
+                "Admin is not allowed to vote due to being approved after vote is created."
+            ),
+            err.downcast().unwrap()
+        );
 
         let resp: AdminsListResp = app
             .wrap()

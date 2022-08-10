@@ -58,6 +58,8 @@ mod query {
 
 pub mod exec {
 
+    use std::cmp::Ordering;
+
     use cosmwasm_std::{
         to_binary, DepsMut, Empty, MessageInfo, Response, StdError, StdResult, SubMsg, WasmMsg,
     };
@@ -82,10 +84,13 @@ pub mod exec {
             .ts();
         let vote_start_time = START_TIME.load(deps.storage)?;
 
-        if admin_start_time < vote_start_time {
-            return Err(StdError::generic_err(
-                "Admin is not allowed to vote due to being approved after vote is created.",
-            ))?;
+        match admin_start_time.cmp(&vote_start_time) {
+            Ordering::Greater => {
+                return Err(StdError::generic_err(
+                    "Admin is not allowed to vote due to being approved after vote is created.",
+                ))?
+            }
+            _ => (),
         }
 
         REQUIRED_VOTES.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
