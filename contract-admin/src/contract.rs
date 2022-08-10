@@ -78,7 +78,8 @@ pub mod exec {
         let mut curr_admins = ADMINS.load(deps.storage)?;
         let vote_owner = VOTE_OWNER.query(&deps.querier, info.sender.clone())?;
 
-        if &env.contract.address != &vote_owner {
+        // TODO: Change to look into PENDING_VOTES
+        if env.contract.address != vote_owner {
             return Err(ContractError::Unauthorized { sender: vote_owner });
         }
 

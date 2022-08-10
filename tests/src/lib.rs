@@ -1,13 +1,17 @@
 #[cfg(test)]
 mod tests {
 
+    
     use cosmwasm_std::{coins, from_binary, Addr, Empty};
     use cw_multi_test::{App, AppResponse, Contract, ContractWrapper, Executor};
     use msgs::admin::{
         AdminsListResp, ExecuteMsg as AdminExecuteMsg, InstantiateMsg as AdminInstantiateMsg,
         QueryMsg as AdminQueryMsg,
     };
-    use msgs::vote::{ExecuteMsg as VoteExecuteMsg, QueryMsg as VoteQueryMsg, VotesLeftResp};
+    use msgs::vote::{
+        ExecuteMsg as VoteExecuteMsg, InstantiateMsg as VoteInstantiateMsg,
+        QueryMsg as VoteQueryMsg, VotesLeftResp,
+    };
 
     use contract_admin::{
         execute as admin_execute, instantiate as admin_instantiate, query as admin_query,
@@ -157,49 +161,71 @@ mod tests {
         assert_eq!(resp, VotesLeftResp { votes_left: 0 });
     }
 
-    // #[test]
-    // fn unauthorized() {
-    //     let mut app = App::new(|router, _api, storage| {
-    //         router
-    //             .bank
-    //             .init_balance(storage, &Addr::unchecked("admin1"), coins(100, "utgd"))
-    //             .unwrap();
-    //     });
-    //     let code = ContractWrapper::new(execute, instantiate, query);
-    //     let code_id = app.store_code(Box::new(code));
-    //     let dummy_vote_code_id = 1;
+    #[test]
+    fn unauthorized() {
+        let mut app = App::new(|router, _api, storage| {
+            router
+                .bank
+                .init_balance(storage, &Addr::unchecked("admin1"), coins(100, "utgd"))
+                .unwrap();
+        });
+        let admin_code_id = app.store_code(admin());
+        let vote_code_id = app.store_code(vote());
 
-    //     let admin = app
-    //         .instantiate_contract(
-    //             code_id,
-    //             Addr::unchecked("owner"),
-    //             &InstantiateMsg {
-    //                 admins: vec![String::from("owner")],
-    //                 donation_denom: "eth".to_owned(),
-    //                 vote_code_id: dummy_vote_code_id,
-    //             },
-    //             &[],
-    //             "vote",
-    //             None,
-    //         )
-    //         .unwrap();
+        let admin = app // contract0
+            .instantiate_contract(
+                admin_code_id,
+                Addr::unchecked("owner"), // sth
+                &AdminInstantiateMsg {
+                    admins: vec![String::from("owner"), String::from("admin1")],
+                    donation_denom: "eth".to_owned(),
+                    vote_code_id: vote_code_id,
+                },
+                &[],
+                "vote",
+                None,
+            )
+            .unwrap();
 
-    //     let err = app
-    //         .execute_contract(
-    //             Addr::unchecked("user"),
-    //             admin,
-    //             &ExecuteMsg::AddMember {},
-    //             &[],
-    //         )
-    //         .unwrap_err();
+        let malicious_vote = app // contract1
+            .instantiate_contract(
+                vote_code_id,
+                Addr::unchecked("malicious_user"), // sth
+                &VoteInstantiateMsg {
+                    required_votes: 1,
+                    proposed_admin: "malicious_user".to_owned(),
+                    admin_code_id,
+                },
+                &[],
+                "malicious_vote",
+                None,
+            )
+            .unwrap();
 
-    //     assert_eq!(
-    //         ContractError::Unauthorized {
-    //             sender: Addr::unchecked("user")
-    //         },
-    //         err.downcast().unwrap()
-    //     );
-    // }
+        let _err = app
+            .execute_contract(
+                Addr::unchecked("admin1"),
+                malicious_vote,
+                &VoteExecuteMsg::Accept {},
+                &[],
+            )
+            .unwrap_err();
+
+        // TODO: test fails on json parsing error. Below assert should work instead.
+        // assert_eq!(
+        //     ContractError::Unauthorized {
+        //         sender: Addr::unchecked("admin1")
+        //     },
+        //     err.downcast().unwrap()
+        // );
+
+        let resp: AdminsListResp = app
+            .wrap()
+            .query_wasm_smart(admin.clone(), &AdminQueryMsg::AdminsList {})
+            .unwrap();
+
+        assert_eq!(resp.admins.len(), 2);
+    }
 
     #[test]
     fn add_members() {
