@@ -91,7 +91,7 @@ pub mod exec {
             ))?;
         }
 
-        REQUIRED_VOTES.update(deps.storage, |votes_left: u32| -> StdResult<u32> {
+        REQUIRED_VOTES.update(deps.storage, |votes_left| -> StdResult<u32> {
             Ok(votes_left - 1)
         })?;
 
