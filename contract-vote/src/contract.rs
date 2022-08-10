@@ -98,7 +98,9 @@ pub mod exec {
         VOTES.save(deps.storage, info.sender, &Empty {})?;
 
         if REQUIRED_VOTES.load(deps.storage)? > 0 {
-            return Ok(Response::new());
+            return Ok(Response::new()
+                .add_attribute("action", "accept")
+                .add_attribute("status", "Voting has already passed."));
         }
 
         let msg = WasmMsg::Execute {
@@ -109,7 +111,7 @@ pub mod exec {
 
         let resp = Response::new()
             .add_submessage(SubMsg::new(msg))
-            .add_attribute("action", "add_admin");
+            .add_attribute("action", "accept");
 
         Ok(resp)
     }
