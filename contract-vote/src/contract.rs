@@ -9,7 +9,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     REQUIRED_APPROVALS.save(deps.storage, &msg.required)?;
-    PROPOSED_ADMIN.save(deps.storage, &msg.proposed_admin)?;
+    PROPOSED_ADMIN.save(deps.storage, &deps.api.addr_validate(&msg.proposed_admin)?)?;
     START_TIME.save(deps.storage, &env.block.time)?;
     VOTE_OWNER.save(deps.storage, &info.sender)?;
     Ok(Response::new())
@@ -118,7 +118,7 @@ mod tests {
                 code_id,
                 Addr::unchecked("owner"),
                 &InstantiateMsg {
-                    proposed_admin: Addr::unchecked("proposed_admin"),
+                    proposed_admin: String::from("proposed_admin"),
                     required: 3,
                     admin_code_id: code_id,
                 },

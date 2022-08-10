@@ -60,7 +60,7 @@ mod tests {
                 Addr::unchecked("owner"),
                 admin,
                 &ExecuteMsg::ProposeAdmin {
-                    addr: Addr::unchecked("new_admin"),
+                    addr: String::from("new_admin"),
                     required_votes: 3,
                     admin_code_id,
                 },

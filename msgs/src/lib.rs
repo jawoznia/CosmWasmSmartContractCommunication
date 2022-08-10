@@ -9,7 +9,7 @@ pub mod vote {
     #[serde(rename_all = "snake_case")]
     pub struct InstantiateMsg {
         pub required: u32,
-        pub proposed_admin: Addr,
+        pub proposed_admin: String,
         pub admin_code_id: u64,
     }
 
@@ -59,7 +59,7 @@ pub mod admin {
             admins: Vec<String>,
         },
         ProposeAdmin {
-            addr: Addr,
+            addr: String,
             required_votes: u32,
             admin_code_id: u64,
         },
@@ -87,7 +87,7 @@ pub mod admin {
     pub enum QueryMsg {
         Greet {},
         AdminsList {},
-        JoinTime { admin: Addr },
+        JoinTime { admin: String },
     }
 
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]

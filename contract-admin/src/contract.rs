@@ -111,7 +111,7 @@ pub mod exec {
     pub fn propose_admin(
         deps: DepsMut,
         info: MessageInfo,
-        addr: Addr,
+        addr: String,
         required_votes: u32,
         admin_code_id: u64,
     ) -> Result<Response, ContractError> {
@@ -204,7 +204,7 @@ pub mod exec {
 }
 
 mod query {
-    use cosmwasm_std::Addr;
+    
 
     use super::*;
 
@@ -226,7 +226,7 @@ mod query {
         Ok(resp)
     }
 
-    pub fn join_time(deps: Deps, addr: Addr) -> StdResult<JoinTimeResp> {
+    pub fn join_time(deps: Deps, addr: String) -> StdResult<JoinTimeResp> {
         let admin = ADMINS
             .load(deps.storage)?
             .into_iter()
@@ -632,7 +632,7 @@ mod tests {
             Addr::unchecked("owner"),
             addr.clone(),
             &ExecuteMsg::ProposeAdmin {
-                addr: Addr::unchecked("proposed_admin"),
+                addr: String::from("proposed_admin"),
                 required_votes: 2,
                 admin_code_id,
             },
