@@ -3,12 +3,14 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub mod vote {
+    use cosmwasm_std::Decimal;
+
     use super::*;
 
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
     #[serde(rename_all = "snake_case")]
     pub struct InstantiateMsg {
-        pub required_votes: u32,
+        pub quorum: Decimal,
         pub proposed_admin: String,
         pub admin_code_id: u64,
     }
@@ -29,7 +31,7 @@ pub mod vote {
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
     #[serde(rename_all = "snake_case")]
     pub struct VotesLeftResp {
-        pub votes_left: u32,
+        pub votes_left: Decimal,
     }
 
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]
@@ -57,11 +59,7 @@ pub mod admin {
     #[serde(rename_all = "snake_case")]
     pub enum ExecuteMsg {
         AddMember {},
-        ProposeAdmin {
-            addr: String,
-            required_votes: u32,
-            admin_code_id: u64,
-        },
+        ProposeAdmin { addr: String, admin_code_id: u64 },
         // How admins know that there is a voting ongoing and they need to send Accept message
         // Blockchain does not inform users about that. This is purely done on f.e. discord.
         // I believe you can also watch messages on blockchain which can give you a hint about that.

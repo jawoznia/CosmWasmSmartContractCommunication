@@ -51,9 +51,8 @@ pub fn execute(
         AddMember {} => exec::add_member(deps, env, info),
         ProposeAdmin {
             addr,
-            required_votes,
             admin_code_id,
-        } => exec::propose_admin(deps, info, addr, required_votes, admin_code_id),
+        } => exec::propose_admin(deps, info, addr, admin_code_id),
         Leave {} => exec::leave(deps, info).map_err(Into::into),
         Donate {} => exec::donate(deps, info),
     }
@@ -93,11 +92,10 @@ pub mod exec {
         deps: DepsMut,
         info: MessageInfo,
         addr: String,
-        required_votes: u32,
         admin_code_id: u64,
     ) -> Result<Response, ContractError> {
         let msg = VoteInstantiate {
-            required_votes,
+            quorum: QUORUM.load(deps.storage)?,
             proposed_admin: addr,
             admin_code_id,
         };
@@ -380,7 +378,6 @@ mod tests {
             addr,
             &ExecuteMsg::ProposeAdmin {
                 addr: String::from("proposed_admin"),
-                required_votes: 2,
                 admin_code_id,
             },
             &[],
