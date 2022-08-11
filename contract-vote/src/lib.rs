@@ -1,6 +1,6 @@
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use msgs::vote::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 pub mod contract;

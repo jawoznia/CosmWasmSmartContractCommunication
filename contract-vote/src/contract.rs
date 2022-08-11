@@ -63,14 +63,12 @@ pub mod exec {
     use cosmwasm_std::{
         to_binary, DepsMut, Empty, MessageInfo, Response, StdError, StdResult, SubMsg, WasmMsg,
     };
-    use msgs::{admin::ExecuteMsg, vote};
+    use msgs::admin::{AdminsListResp, ExecuteMsg, QueryMsg};
 
     use crate::state::{
         admin::{ADMINS, QUORUM},
         REQUIRED_VOTES, START_TIME, VOTES, VOTE_OWNER,
     };
-
-    pub const ADMIN_JOIN_TIME_QUERY_ID: u64 = 1;
 
     pub fn accept(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
         if VOTES.has(deps.storage, info.sender.clone()) {
@@ -91,6 +89,10 @@ pub mod exec {
         let _votes = VOTES
             .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
             .count();
+
+        let _resp: AdminsListResp = deps
+            .querier
+            .query_wasm_smart(vote_owner, &QueryMsg::AdminsList {})?;
 
         if REQUIRED_VOTES.load(deps.storage)? > 0 {
             return Ok(Response::new()

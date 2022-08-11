@@ -163,6 +163,7 @@ pub mod exec {
         let data = resp
             .data
             .ok_or_else(|| StdError::generic_err("No instantiate response data"))?;
+
         let resp = parse_instantiate_response_data(&data)
             .map_err(|err| StdError::generic_err(err.to_string()))?;
         let vote_addr = Addr::unchecked(&resp.contract_address);
