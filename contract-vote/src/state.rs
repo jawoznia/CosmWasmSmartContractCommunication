@@ -11,6 +11,9 @@ pub const VOTE_OWNER: Item<Addr> = Item::new("vote_owner");
 pub const START_TIME: Item<Timestamp> = Item::new("start_time");
 
 pub mod admin {
+    use cosmwasm_std::Decimal;
+
     use super::*;
     pub const ADMINS: Map<Addr, Timestamp> = Map::new("admins");
+    pub const QUORUM: Item<Decimal> = Item::new("quorum");
 }

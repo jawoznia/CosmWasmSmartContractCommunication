@@ -63,9 +63,12 @@ pub mod exec {
     use cosmwasm_std::{
         to_binary, DepsMut, Empty, MessageInfo, Response, StdError, StdResult, SubMsg, WasmMsg,
     };
-    use msgs::admin::ExecuteMsg;
+    use msgs::{admin::ExecuteMsg, vote};
 
-    use crate::state::{admin::ADMINS, REQUIRED_VOTES, START_TIME, VOTES, VOTE_OWNER};
+    use crate::state::{
+        admin::{ADMINS, QUORUM},
+        REQUIRED_VOTES, START_TIME, VOTES, VOTE_OWNER,
+    };
 
     pub const ADMIN_JOIN_TIME_QUERY_ID: u64 = 1;
 
@@ -80,7 +83,14 @@ pub mod exec {
             Ok(votes_left - 1)
         })?;
 
+        let vote_owner = VOTE_OWNER.load(deps.storage)?;
+        let _quorum = QUORUM.query(&deps.querier, vote_owner.clone())?;
+
         VOTES.save(deps.storage, info.sender, &Empty {})?;
+
+        let _votes = VOTES
+            .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+            .count();
 
         if REQUIRED_VOTES.load(deps.storage)? > 0 {
             return Ok(Response::new()
