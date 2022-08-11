@@ -1,4 +1,6 @@
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult};
+use cosmwasm_std::{
+    entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
+};
 use error::ContractError;
 use msgs::admin::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
