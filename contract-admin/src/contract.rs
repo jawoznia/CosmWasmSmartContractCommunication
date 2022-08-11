@@ -199,6 +199,7 @@ mod tests {
     use crate::reply;
 
     use cosmwasm_std::Addr;
+    use cosmwasm_std::Decimal;
     use cw_multi_test::{App, ContractWrapper, Executor};
 
     use contract_vote::execute as vote_execute;
@@ -222,7 +223,7 @@ mod tests {
                     admins: vec![],
                     donation_denom: "eth".to_owned(),
                     vote_code_id: VOTE_INSTANTIATE_ID,
-                    quorum: 30,
+                    quorum: Decimal::raw(30),
                 },
                 &[],
                 "Contract",
@@ -245,7 +246,7 @@ mod tests {
                     admins: vec!["admin1".to_owned(), "admin2".to_owned()],
                     donation_denom: "eth".to_owned(),
                     vote_code_id: VOTE_INSTANTIATE_ID,
-                    quorum: 30,
+                    quorum: Decimal::raw(30),
                 },
                 &[],
                 "Contract 2",
@@ -286,7 +287,7 @@ mod tests {
                     admins: vec!["admin1".to_owned(), "admin2".to_owned()],
                     donation_denom: "eth".to_owned(),
                     vote_code_id: VOTE_INSTANTIATE_ID,
-                    quorum: 30,
+                    quorum: Decimal::raw(30),
                 },
                 &[],
                 "Contract",
@@ -358,7 +359,7 @@ mod tests {
                     admins: vec![],
                     donation_denom: "eth".to_owned(),
                     vote_code_id,
-                    quorum: 30,
+                    quorum: Decimal::raw(30),
                 },
                 &[],
                 "Contract",

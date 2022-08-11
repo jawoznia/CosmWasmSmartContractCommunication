@@ -74,22 +74,7 @@ pub mod exec {
             return Ok(Response::new());
         }
 
-        let admin_start_time = match ADMINS.query(
-            &deps.querier,
-            VOTE_OWNER.load(deps.storage)?,
-            info.sender.clone(),
-        )? {
-            Some(v) => v,
-            None => return Err(StdError::generic_err("Non admin accept!.")),
-        };
-
-        let vote_start_time = START_TIME.load(deps.storage)?;
-
-        if admin_start_time.cmp(&vote_start_time) == Ordering::Greater {
-            return Err(StdError::generic_err(
-                "Admin is not allowed to vote due to being approved after vote is created.",
-            ))?;
-        }
+        validate_admin_prove_to_vote(&deps, &info)?;
 
         REQUIRED_VOTES.update(deps.storage, |votes_left| -> StdResult<u32> {
             Ok(votes_left - 1)
@@ -114,6 +99,26 @@ pub mod exec {
             .add_attribute("action", "accept");
 
         Ok(resp)
+    }
+
+    fn validate_admin_prove_to_vote(deps: &DepsMut, info: &MessageInfo) -> StdResult<()> {
+        let admin_start_time = match ADMINS.query(
+            &deps.querier,
+            VOTE_OWNER.load(deps.storage)?,
+            info.sender.clone(),
+        )? {
+            Some(v) => v,
+            None => return Err(StdError::generic_err("Non admin accept!.")),
+        };
+
+        let vote_start_time = START_TIME.load(deps.storage)?;
+
+        if admin_start_time.cmp(&vote_start_time) == Ordering::Greater {
+            return Err(StdError::generic_err(
+                "Admin is not allowed to vote due to being approved after vote is created.",
+            ))?;
+        }
+        Ok(())
     }
 }
 

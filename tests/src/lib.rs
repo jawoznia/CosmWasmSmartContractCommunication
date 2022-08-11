@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
 
-    use cosmwasm_std::{coins, from_binary, Addr, Empty, StdError};
+    use cosmwasm_std::{coins, from_binary, Addr, Decimal, Empty, StdError};
     use cw_multi_test::{next_block, App, AppResponse, Contract, ContractWrapper, Executor};
     use msgs::admin::{
         AdminsListResp, ExecuteMsg as AdminExecuteMsg, InstantiateMsg as AdminInstantiateMsg,
@@ -55,6 +55,7 @@ mod tests {
                     ],
                     donation_denom: "eth".to_owned(),
                     vote_code_id,
+                    quorum: Decimal::raw(30),
                 },
                 &[],
                 "vote",
@@ -194,6 +195,7 @@ mod tests {
                     admins: vec![String::from("owner"), String::from("admin1")],
                     donation_denom: "eth".to_owned(),
                     vote_code_id,
+                    quorum: Decimal::raw(30),
                 },
                 &[],
                 "vote",
@@ -260,6 +262,7 @@ mod tests {
                     admins: vec![String::from("owner"), String::from("admin1")],
                     donation_denom: "eth".to_owned(),
                     vote_code_id,
+                    quorum: Decimal::raw(30),
                 },
                 &[],
                 "vote",
@@ -329,6 +332,7 @@ mod tests {
                     ],
                     donation_denom: "eth".to_owned(),
                     vote_code_id,
+                    quorum: Decimal::raw(30),
                 },
                 &[],
                 "vote",
@@ -446,6 +450,7 @@ mod tests {
                     admins: vec![String::from("owner"), String::from("admin1")],
                     donation_denom: "eth".to_owned(),
                     vote_code_id,
+                    quorum: Decimal::raw(30),
                 },
                 &[],
                 "vote",

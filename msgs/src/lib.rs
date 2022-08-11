@@ -40,7 +40,7 @@ pub mod vote {
 }
 
 pub mod admin {
-    use cosmwasm_std::{Timestamp, Decimal};
+    use cosmwasm_std::{Decimal, Timestamp};
 
     use super::*;
 
