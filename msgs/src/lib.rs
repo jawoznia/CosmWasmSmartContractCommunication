@@ -40,7 +40,7 @@ pub mod vote {
 }
 
 pub mod admin {
-    use cosmwasm_std::Timestamp;
+    use cosmwasm_std::{Timestamp, Decimal};
 
     use super::*;
 
@@ -50,6 +50,7 @@ pub mod admin {
         pub admins: Vec<String>,
         pub donation_denom: String,
         pub vote_code_id: u64,
+        pub quorum: Decimal,
     }
 
     #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone, JsonSchema)]

@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::state::{ADMINS, DONATION_DENOM, VOTE_CODE_ID};
+use crate::state::{ADMINS, DONATION_DENOM, QUORUM, VOTE_CODE_ID};
 use cosmwasm_std::{
     coins, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
     StdResult,
@@ -25,6 +25,7 @@ pub fn instantiate(
     }
     DONATION_DENOM.save(deps.storage, &msg.donation_denom)?;
     VOTE_CODE_ID.save(deps.storage, &msg.vote_code_id)?;
+    QUORUM.save(deps.storage, &msg.quorum)?;
 
     Ok(Response::new())
 }
@@ -221,6 +222,7 @@ mod tests {
                     admins: vec![],
                     donation_denom: "eth".to_owned(),
                     vote_code_id: VOTE_INSTANTIATE_ID,
+                    quorum: 30,
                 },
                 &[],
                 "Contract",
@@ -243,6 +245,7 @@ mod tests {
                     admins: vec!["admin1".to_owned(), "admin2".to_owned()],
                     donation_denom: "eth".to_owned(),
                     vote_code_id: VOTE_INSTANTIATE_ID,
+                    quorum: 30,
                 },
                 &[],
                 "Contract 2",
@@ -283,6 +286,7 @@ mod tests {
                     admins: vec!["admin1".to_owned(), "admin2".to_owned()],
                     donation_denom: "eth".to_owned(),
                     vote_code_id: VOTE_INSTANTIATE_ID,
+                    quorum: 30,
                 },
                 &[],
                 "Contract",
@@ -354,6 +358,7 @@ mod tests {
                     admins: vec![],
                     donation_denom: "eth".to_owned(),
                     vote_code_id,
+                    quorum: 30,
                 },
                 &[],
                 "Contract",
