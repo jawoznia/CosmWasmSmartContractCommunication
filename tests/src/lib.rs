@@ -33,17 +33,6 @@ mod tests {
     }
 
     #[test]
-    fn testing_decimals() {
-        let one_str = Decimal::from_str("1.0").unwrap();
-        let one = Decimal::one();
-        let one_hundred_percent = Decimal::percent(100);
-        assert_eq!(one_str, one);
-        assert_eq!(one_hundred_percent, one);
-        assert_eq!(one - one_str, Decimal::zero());
-        assert_eq!(one * one_hundred_percent - one_str, Decimal::zero());
-    }
-
-    #[test]
     fn accept_vote() {
         let mut app = App::new(|router, _api, storage| {
             router
@@ -216,73 +205,6 @@ mod tests {
             }
         );
     }
-
-    // #[test]
-    // fn unauthorized() {
-    //     let mut app = App::new(|router, _api, storage| {
-    //         router
-    //             .bank
-    //             .init_balance(storage, &Addr::unchecked("admin1"), coins(100, "utgd"))
-    //             .unwrap();
-    //     });
-    //     let admin_code_id = app.store_code(admin());
-    //     let vote_code_id = app.store_code(vote());
-
-    //     let admin = app
-    //         .instantiate_contract(
-    //             admin_code_id,
-    //             Addr::unchecked("owner"),
-    //             &AdminInstantiateMsg {
-    //                 admins: vec![String::from("owner"), String::from("admin1")],
-    //                 donation_denom: "eth".to_owned(),
-    //                 vote_code_id,
-    //                 quorum: Decimal::raw(30),
-    //             },
-    //             &[],
-    //             "vote",
-    //             None,
-    //         )
-    //         .unwrap();
-
-    //     let malicious_vote = app
-    //         .instantiate_contract(
-    //             vote_code_id,
-    //             Addr::unchecked("malicious_user"),
-    //             &VoteInstantiateMsg {
-    //                 quorum: Decimal::raw(30),
-    //                 proposed_admin: "malicious_user".to_owned(),
-    //                 admin_code_id,
-    //             },
-    //             &[],
-    //             "malicious_vote",
-    //             None,
-    //         )
-    //         .unwrap();
-
-    //     let _err = app
-    //         .execute_contract(
-    //             Addr::unchecked("admin1"),
-    //             malicious_vote,
-    //             &VoteExecuteMsg::Accept {},
-    //             &[],
-    //         )
-    //         .unwrap_err();
-
-    //     // TODO: test fails on json parsing error. Below assert should work instead.
-    //     // assert_eq!(
-    //     //     ContractError::Unauthorized {
-    //     //         sender: Addr::unchecked("admin1")
-    //     //     },
-    //     //     err.downcast().unwrap()
-    //     // );
-
-    //     let resp: AdminsListResp = app
-    //         .wrap()
-    //         .query_wasm_smart(admin, &AdminQueryMsg::AdminsList {})
-    //         .unwrap();
-
-    //     assert_eq!(resp.admins.len(), 2);
-    // }
 
     #[test]
     fn add_member() {
